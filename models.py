@@ -4,13 +4,13 @@ from sqlalchemy.orm import mapped_column
 from database import Base
 
 class Movie(Base):
-    __tablename__ = "movies"
+    __tablename__ = "movie"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    movie_id: Mapped[int] = mapped_column(primary_key=True)
 
-    title: Mapped[str]
+    movie_title: Mapped[str]= mapped_column(unique=True)
 class Keyword(Base):
-    __tablename__ = "keywords"
+    __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 

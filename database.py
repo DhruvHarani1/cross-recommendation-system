@@ -1,8 +1,12 @@
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
-
+import dotenv
+dotenv.load_dotenv()
+PASSOWRD=os.getenv("POSTGRES_PASSWORD")
 DATABASE_URL = (
-    "postgresql+psycopg://postgres:password@localhost/mydb"
+   f"postgresql://postgres:{PASSOWRD}@localhost:5433/recommendation_system"
 )
 
 engine = create_engine(DATABASE_URL)

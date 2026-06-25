@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-
+from database import SessionLocal
+from models import Movie
 app = FastAPI()
 
 
@@ -16,10 +17,6 @@ def store_movies(store_size: int):
     # store movies to postgres 
     pass
 
-
-from database import SessionLocal
-from models import Movie
-
 #ONLY EXAMPLE (IN FUTHER: REPLACED WITH EXTRAL API RESULT)
 movie_data = {
     "id": 550,
@@ -32,11 +29,8 @@ movie_data = {
 db = SessionLocal()
 
 movie = Movie(
-    movie_api_id=movie_data["id"],
-    title=movie_data["title"],
-    release_date=movie_data["release_date"],
-    rating=movie_data["vote_average"],
-    overview=movie_data["overview"]
+    movie_id=movie_data["id"],
+    movie_title=movie_data["title"],
 )
 
 db.add(movie)

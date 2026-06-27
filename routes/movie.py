@@ -1,50 +1,47 @@
-from fastapi import APIRouter
+from fastapi import APIRouter,Depends,HTTPException
+from sqlalchemy.orm import Session
 
-from database import SessionLocal
+from database import get_db
 from models import Movie
+from schemas.movie import MovieCreate
 
 router = APIRouter(
     prefix="/movies",
     tags=["Movies"]
 )
 
-
-@router.get("/search/{movie_name}")
-def search_movie(movie_name: str):
-    # get movies for testing
-    return {
-        "movie_name": movie_name
-    }
-
-
-@router.post("/store/{store_size}")
-def store_movies(store_size: int):
-    return {
-        # store movies to postgres 
-        "message": f"Store {store_size} movies"
-    }
-
-#ONLY EXAMPLE (IN FUTHER: REPLACED WITH EXTRAL API RESULT)
-@router.post("/test")
-def test_insert():
-
-    movie_data = {
-        "id": 10,
-        "title": "Fight Club",
-    }
-
-    db = SessionLocal()
-
-    try:
-        movie = Movie(
-            movie_id=movie_data["id"],
-            movie_title=movie_data["title"],
+@router.post("/")
+def create_movie(movie:MovieCreate,db:Session = Depends(get_db)):
+    
+    existing_movie = db.get(Movie,movie.movie_id)
+    
+    if existing_movie:
+        raise HTTPException(
+            status_code=409,
+            detail="Movie already exists."
         )
-
-        db.add(movie)
+    
+    new_movie = Movie(
+       movie_id = movie.movie_id,
+       movie_title = movie.movie_title,
+       movie_overview = movie.movie_overview,
+       movie_poster_path = movie.movie_poster_path
+    )
+    
+    try:
+        db.add(new_movie)
         db.commit()
+        db.refresh(new_movie)
 
-    finally:
-        db.close()
+    except Exception as e:
+        db.rollback()
 
-    return {"message": "Movie inserted"}
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database Error : {str(e)}"
+        )
+    
+    return {
+        "message": "Movie added successfully",
+        "movie": new_movie
+    }

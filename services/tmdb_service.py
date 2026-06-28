@@ -15,7 +15,7 @@ def validate_api_key():
         raise ValueError("you have not a valid api key")
     
 
-def fetch_movie(page:int=1):
+def fetch_movies(page:int=1):
     validate_api_key()
     url = f"{BASE_URL}/discover/movie"
     
@@ -34,7 +34,7 @@ def fetch_movie(page:int=1):
     
     return response.json()["results"]
 
-def parse_movie(raw_movies):
+def parse_movies(raw_movies):
     movies = []
     
     for movie in raw_movies:
@@ -52,3 +52,32 @@ def parse_movie(raw_movies):
         )
         
     return movies
+
+def fetch_movie_keywords(movie_id:int):
+    validate_api_key()
+    
+    url = f"{BASE_URL}/movie/{movie_id}/keywords"
+    
+    params = {
+        "api_key": API_KEY
+    }
+    
+    response = requests.get(
+        url,
+        params = params,
+        timeout=20
+    )
+    
+    response.raise_for_status()
+    
+    return response.json()
+
+
+
+def parse_keywords(raw_keywords):
+    keywords = []
+    
+    for keyword in raw_keywords["keywords"]:
+        keywords.append(keyword["name"])
+    
+    return keywords

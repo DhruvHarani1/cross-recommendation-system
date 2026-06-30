@@ -19,3 +19,18 @@ class MovieKeyword(Base):
     id: Mapped[int] = mapped_column(primary_key=True,autoincrement=True)
     movie_id:Mapped[int] = mapped_column(ForeignKey("movie.movie_id"))
     keyword: Mapped[str]=mapped_column(String)
+    
+class Book(Base):
+    __tablename__ = "book"
+    
+    book_id:Mapped[str] = mapped_column(String,primary_key=True)
+    book_title:Mapped[str] = mapped_column(String)
+    book_overview:Mapped[str] = mapped_column(String)
+    book_cover_path:Mapped[str] = mapped_column(String)
+    
+class BookKeyword(Base):
+    __tablename__ = "book_keywords"
+    
+    id:Mapped[int] = mapped_column(primary_key=True,autoincrement=True)
+    book_id:Mapped[str] = mapped_column(ForeignKey("book.book_id"))
+    keyword:Mapped[str] = mapped_column(String)

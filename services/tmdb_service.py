@@ -1,11 +1,8 @@
-import logging
 import os 
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
-
-logger = logging.getLogger(__name__)
 
 API_KEY = os.getenv('API_KEY_MOVIES')
 BASE_URL = "https://api.themoviedb.org/3"

@@ -27,6 +27,7 @@ class Book(Base):
     book_title:Mapped[str] = mapped_column(String)
     book_overview:Mapped[str] = mapped_column(String)
     book_cover_path:Mapped[str] = mapped_column(String)
+    book_categories:Mapped[str] = mapped_column(String)
     
 class BookKeyword(Base):
     __tablename__ = "book_keywords"

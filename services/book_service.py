@@ -82,6 +82,8 @@ def parse_books(raw_books):
                 "book_title": title,
                 "book_overview": description,
                 "book_cover_path": cover,
+                "authors": info.get("authors", []),
+                "categories": info.get("categories", [])
             }
         )
 

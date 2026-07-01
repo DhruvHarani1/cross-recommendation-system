@@ -18,7 +18,8 @@ def save_books(db: Session, books):
             book_id=book["book_id"],
             book_title=book["book_title"],
             book_overview=book["book_overview"],
-            book_cover_path=book["book_cover_path"]
+            book_cover_path=book["book_cover_path"],
+            book_categories=", ".join(book["categories"])
         )
 
         db.add(new_book)

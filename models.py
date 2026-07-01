@@ -34,3 +34,19 @@ class BookKeyword(Base):
     id:Mapped[int] = mapped_column(primary_key=True,autoincrement=True)
     book_id:Mapped[str] = mapped_column(ForeignKey("book.book_id"))
     keyword:Mapped[str] = mapped_column(String)
+
+class Song(Base):
+    __tablename__ = "song"
+
+    song_id: Mapped[str] = mapped_column(String, primary_key=True)  # use "artist::track" as a stable id, Last.fm has no numeric id
+    song_title: Mapped[str] = mapped_column(String)
+    song_artist: Mapped[str] = mapped_column(String)
+    song_cover_path: Mapped[str] = mapped_column(String)
+
+
+class SongKeyword(Base):
+    __tablename__ = "song_keywords"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    song_id: Mapped[str] = mapped_column(ForeignKey("song.song_id"))
+    keyword: Mapped[str] = mapped_column(String)

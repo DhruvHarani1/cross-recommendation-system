@@ -51,3 +51,19 @@ class SongKeyword(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     song_id: Mapped[str] = mapped_column(ForeignKey("song.song_id"))
     keyword: Mapped[str] = mapped_column(String)
+    
+class Game(Base):
+    __tablename__ = "game"
+
+    game_id: Mapped[int] = mapped_column(primary_key=True)  # RAWG ID
+    game_title: Mapped[str] = mapped_column(String)
+    game_cover_path: Mapped[str] = mapped_column(String)
+    game_genres: Mapped[str] = mapped_column(String)
+
+
+class GameKeyword(Base):
+    __tablename__ = "game_keywords"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    game_id: Mapped[int] = mapped_column(ForeignKey("game.game_id"))
+    keyword: Mapped[str] = mapped_column(String)

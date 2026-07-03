@@ -15,3 +15,12 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 class Base(DeclarativeBase):
     pass
+
+#Dependency Injection:to get database session
+def get_db():
+    db = SessionLocal()
+    
+    try:
+        yield db
+    finally:
+        db.close()

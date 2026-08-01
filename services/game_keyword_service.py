@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from models import Game, GameKeyword
 
 
-def save_keywords(db: Session, game_id: int, keywords: list[str]):
+def save_keywords(db: Session, game_id: str, keywords: list[str]):
 
     inserted_keywords = 0
 

@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from models import MovieKeyword,Movie
 
-def save_keywords(db:Session,movie_id:int,keywords:list[str]):
+def save_keywords(db:Session,movie_id:str,keywords:list[str]):
     
     inserted_keywords = 0
     

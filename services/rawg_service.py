@@ -49,7 +49,7 @@ def parse_games(raw_games):
 
         games.append(
             {
-                "game_id": game["id"],
+                "game_id": str(game["id"]),
                 "game_title": game["name"],
                 "game_cover_path": game["background_image"],
                 "game_genres": genres
@@ -59,7 +59,7 @@ def parse_games(raw_games):
     return games
 
 
-def fetch_game_details(game_id: int):
+def fetch_game_details(game_id: str):
     validate_api_key()
 
     url = f"{BASE_URL}/games/{game_id}"

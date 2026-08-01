@@ -60,7 +60,7 @@ def parse_movies(raw_movies):
         
         movies.append(
             {
-                "movie_id":movie['id'],
+                "movie_id":str(movie['id']),
                 "movie_title":movie['original_title'],
                 "movie_overview":movie['overview'],
                 "movie_poster_path":movie['poster_path']
@@ -69,7 +69,7 @@ def parse_movies(raw_movies):
         
     return movies
 
-def fetch_movie_keywords(movie_id:int):
+def fetch_movie_keywords(movie_id:str):
     validate_api_key()
     
     url = f"{BASE_URL}/movie/{movie_id}/keywords"

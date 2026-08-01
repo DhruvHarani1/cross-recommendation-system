@@ -68,9 +68,6 @@ class GameKeyword(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     game_id: Mapped[str] = mapped_column(ForeignKey("game.game_id"))
     keyword: Mapped[str] = mapped_column(String)
-    game_id: Mapped[int] = mapped_column(ForeignKey("game.game_id"))
-    keyword: Mapped[str] = mapped_column(String)
-    
 
 class ContentEmbedding(Base):
     __tablename__ = "content_embedding"

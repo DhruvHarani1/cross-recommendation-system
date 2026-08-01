@@ -1,11 +1,9 @@
-import logging
-import os 
+import os
+import time 
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
-
-logger = logging.getLogger(__name__)
 
 API_KEY = os.getenv('API_KEY_MOVIES')
 BASE_URL = "https://api.themoviedb.org/3"
@@ -15,26 +13,44 @@ def validate_api_key():
         raise ValueError("you have not a valid api key")
     
 
-def fetch_movie(page:int=1):
+def fetch_movie(page: int = 1):
     validate_api_key()
+
     url = f"{BASE_URL}/discover/movie"
-    
+
     params = {
         "api_key": API_KEY,
         "page": page,
         "sort_by": "popularity.desc"
     }
-    response = requests.get(
-        url,
-        params=params,
-        timeout=10
-    )
-    
-    response.raise_for_status()
-    
-    return response.json()["results"]
 
-def parse_movie(raw_movies):
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "CrossRecommendationSystem/1.0"
+    }
+
+    for attempt in range(3):
+        try:
+            response = requests.get(
+                url,
+                params=params,
+                headers=headers,
+                timeout=20
+            )
+
+            response.raise_for_status()
+
+            return response.json()["results"]
+
+        except requests.exceptions.RequestException as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+
+            if attempt < 2:
+                time.sleep(2)
+            else:
+                raise
+
+def parse_movies(raw_movies):
     movies = []
     
     for movie in raw_movies:
@@ -52,3 +68,32 @@ def parse_movie(raw_movies):
         )
         
     return movies
+
+def fetch_movie_keywords(movie_id:int):
+    validate_api_key()
+    
+    url = f"{BASE_URL}/movie/{movie_id}/keywords"
+    
+    params = {
+        "api_key": API_KEY
+    }
+    
+    response = requests.get(
+        url,
+        params = params,
+        timeout=20
+    )
+    
+    response.raise_for_status()
+    
+    return response.json()
+
+
+
+def parse_keywords(raw_keywords):
+    keywords = []
+    
+    for keyword in raw_keywords["keywords"]:
+        keywords.append(keyword["name"])
+    
+    return keywords

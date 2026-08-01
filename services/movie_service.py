@@ -29,3 +29,6 @@ def save_movies(db:Session,movies):
         raise
 
     return inserted_movies
+
+def get_all_movies(db:Session):
+    return db.query(Movie).all()

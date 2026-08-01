@@ -1,5 +1,5 @@
 from database import SessionLocal
-from services.tmdb_service import fetch_movie, parse_movie
+from services.tmdb_service import fetch_movie, parse_movies
 from services.movie_service import save_movies
 
 
@@ -15,7 +15,7 @@ def load_movies(total_pages: int = 10):
 
             raw_movies = fetch_movie(page)
 
-            movies = parse_movie(raw_movies)
+            movies = parse_movies(raw_movies)
 
             inserted = save_movies(db, movies)
 

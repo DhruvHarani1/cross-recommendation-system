@@ -8,7 +8,7 @@ from database import Base
 class Movie(Base):
     __tablename__ = "movie"
 
-    movie_id: Mapped[int] = mapped_column(primary_key=True)
+    movie_id: Mapped[str] = mapped_column(String,primary_key=True)
     movie_title: Mapped[str] = mapped_column(String)
     movie_overview:Mapped[str] = mapped_column(String)
     movie_poster_path:Mapped[str] = mapped_column(String)
@@ -18,7 +18,7 @@ class MovieKeyword(Base):
     __tablename__ = "movie_keywords"
 
     id: Mapped[int] = mapped_column(primary_key=True,autoincrement=True)
-    movie_id:Mapped[int] = mapped_column(ForeignKey("movie.movie_id"))
+    movie_id:Mapped[str] = mapped_column(ForeignKey("movie.movie_id"))
     keyword: Mapped[str]=mapped_column(String)
     
 class Book(Base):
@@ -56,7 +56,7 @@ class SongKeyword(Base):
 class Game(Base):
     __tablename__ = "game"
 
-    game_id: Mapped[int] = mapped_column(primary_key=True)  # RAWG ID
+    game_id: Mapped[str] = mapped_column(String,primary_key=True)  # RAWG ID
     game_title: Mapped[str] = mapped_column(String)
     game_cover_path: Mapped[str] = mapped_column(String)
     game_genres: Mapped[str] = mapped_column(String)
@@ -66,6 +66,8 @@ class GameKeyword(Base):
     __tablename__ = "game_keywords"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    game_id: Mapped[str] = mapped_column(ForeignKey("game.game_id"))
+    keyword: Mapped[str] = mapped_column(String)
     game_id: Mapped[int] = mapped_column(ForeignKey("game.game_id"))
     keyword: Mapped[str] = mapped_column(String)
     

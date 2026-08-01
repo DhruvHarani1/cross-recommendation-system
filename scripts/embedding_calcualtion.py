@@ -56,7 +56,7 @@ def generate_embeddings_for_type(content_type: str):
             
             # Fetch all keywords associated with this item
             keywords_objs = db.query(KeywordModel).filter(
-                getattr(KeywordModel, id_attr_name) == (int(item_id) if content_type in ["movie", "game"] else item_id)
+                getattr(KeywordModel, id_attr_name) == item_id
             ).all()
             keywords_str = ", ".join([k.keyword for k in keywords_objs])
             

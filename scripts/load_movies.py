@@ -19,7 +19,7 @@ def load_movies(start_page: int = 26, total_pages: int = 60):
 
             for attempt in range(3):
                 try:
-                    raw_movies = fetch_movies(page)
+                    raw_movies = fetch_movie(page)
                     break
 
                 except Exception as e:

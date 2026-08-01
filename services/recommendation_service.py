@@ -21,9 +21,9 @@ def get_model():
 def get_keywords_str(db: Session, content_id: str, content_type: str) -> str:
     """Fetches a comma-separated list of keywords for any content type."""
     if content_type == "movie":
-        keywords = db.query(MovieKeyword).filter(MovieKeyword.movie_id == int(content_id)).all()
+        keywords = db.query(MovieKeyword).filter(MovieKeyword.movie_id == content_id).all()
     elif content_type == "game":
-        keywords = db.query(GameKeyword).filter(GameKeyword.game_id == int(content_id)).all()
+        keywords = db.query(GameKeyword).filter(GameKeyword.game_id == content_id).all()
     elif content_type == "song":
         keywords = db.query(SongKeyword).filter(SongKeyword.song_id == content_id).all()
     elif content_type == "book":
@@ -35,13 +35,13 @@ def get_keywords_str(db: Session, content_id: str, content_type: str) -> str:
 def resolve_metadata(db: Session, item_id: str, item_type: str):
     """Retrieves title and cover image for any given item type."""
     if item_type == "movie":
-        item = db.get(Movie, int(item_id))
+        item = db.get(Movie, item_id)
         return {
             "title": item.movie_title if item else f"Movie {item_id}",
             "cover_path": item.movie_poster_path if item else None
         }
     elif item_type == "game":
-        item = db.get(Game, int(item_id))
+        item = db.get(Game, item_id)
         return {
             "title": item.game_title if item else f"Game {item_id}",
             "cover_path": item.game_cover_path if item else None
@@ -65,12 +65,12 @@ def get_or_create_embedding(db: Session , content_id :str , content_type:str)->n
         return np.array(record.embedding)
     keyword_str = get_keywords_str(db,content_id,content_type)
     if content_type == "movie":
-        item = db.get(Movie,int(content_id))
+        item = db.get(Movie, content_id)
         if not item:
             raise ValueError(f"Movie with ID {content_id} not found.")
         input_text = f"Title: {item.movie_title}. Overview: {item.movie_overview}. Keywords: {keyword_str}"
     elif content_type == "game":
-        item = db.get(Game, int(content_id))
+        item = db.get(Game, content_id)
         if not item:
             raise ValueError(f"Game with ID {content_id} not found.")
         input_text = f"Title: {item.game_title}. Genres: {item.game_genres}. Keywords: {keyword_str}"

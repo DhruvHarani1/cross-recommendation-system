@@ -1,7 +1,7 @@
 import time
 
 from database import SessionLocal
-from services.tmdb_service import fetch_movies, parse_movies
+from services.tmdb_service import fetch_movie, parse_movies
 from services.movie_service import save_movies
 
 

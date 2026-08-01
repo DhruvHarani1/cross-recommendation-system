@@ -1,6 +1,7 @@
-from sqlalchemy import String,ForeignKey
+from sqlalchemy import String,ForeignKey ,Float, ARRAY
 from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column,relationship
+from sqlalchemy.orm import mapped_column
+
 
 from database import Base
 
@@ -67,3 +68,14 @@ class GameKeyword(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     game_id: Mapped[str] = mapped_column(ForeignKey("game.game_id"))
     keyword: Mapped[str] = mapped_column(String)
+    game_id: Mapped[int] = mapped_column(ForeignKey("game.game_id"))
+    keyword: Mapped[str] = mapped_column(String)
+    
+
+class ContentEmbedding(Base):
+    __tablename__ = "content_embedding"
+    content_id: Mapped[str] = mapped_column(String, primary_key=True)
+    content_type: Mapped[str] = mapped_column(String, primary_key=True)
+    # Store embedding as a list of floats in PostgreSQL
+    embedding: Mapped[list[float]] = mapped_column(ARRAY(Float), nullable=False)
+    popularity_score: Mapped[float] = mapped_column(Float, default=0.0)

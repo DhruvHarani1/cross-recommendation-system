@@ -1,4 +1,5 @@
-import os 
+import os
+import time 
 import requests
 from dotenv import load_dotenv
 
@@ -12,24 +13,42 @@ def validate_api_key():
         raise ValueError("you have not a valid api key")
     
 
-def fetch_movies(page:int=1):
+def fetch_movie(page: int = 1):
     validate_api_key()
+
     url = f"{BASE_URL}/discover/movie"
-    
+
     params = {
         "api_key": API_KEY,
         "page": page,
         "sort_by": "popularity.desc"
     }
-    response = requests.get(
-        url,
-        params=params,
-        timeout=10
-    )
-    
-    response.raise_for_status()
-    
-    return response.json()["results"]
+
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "CrossRecommendationSystem/1.0"
+    }
+
+    for attempt in range(3):
+        try:
+            response = requests.get(
+                url,
+                params=params,
+                headers=headers,
+                timeout=20
+            )
+
+            response.raise_for_status()
+
+            return response.json()["results"]
+
+        except requests.exceptions.RequestException as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+
+            if attempt < 2:
+                time.sleep(2)
+            else:
+                raise
 
 def parse_movies(raw_movies):
     movies = []

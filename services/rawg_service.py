@@ -86,3 +86,33 @@ def parse_game_keywords(raw_game):
         keywords.append(tag["name"])
 
     return keywords
+
+
+def search_game_by_title(query: str):
+    """Search RAWG for a game by title. Returns parsed game dict or None."""
+    validate_api_key()
+
+    url = f"{BASE_URL}/games"
+    params = {
+        "key": API_KEY,
+        "search": query,
+        "page_size": 5
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        results = response.json().get("results", [])
+    except requests.exceptions.RequestException:
+        return None
+
+    for game in results:
+        if game.get("background_image"):
+            genres = ", ".join(g["name"] for g in game.get("genres", []))
+            return {
+                "game_id": str(game["id"]),
+                "game_title": game["name"],
+                "game_cover_path": game["background_image"],
+                "game_genres": genres
+            }
+    return None

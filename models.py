@@ -1,9 +1,40 @@
-from sqlalchemy import String,ForeignKey ,Float, ARRAY
+from sqlalchemy import String, ForeignKey, Float, ARRAY, DateTime
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
+from datetime import datetime, timezone
 
 
 from database import Base
+
+
+# ── User & Interactions (Google Auth future-ready) ────────────────────────────
+
+class User(Base):
+    __tablename__ = "users"
+
+    user_id: Mapped[str] = mapped_column(String, primary_key=True)
+    email: Mapped[str] = mapped_column(String, nullable=True)  # For future Google OAuth
+    display_name: Mapped[str] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class UserInteraction(Base):
+    __tablename__ = "user_interactions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.user_id"))
+    content_id: Mapped[str] = mapped_column(String)
+    content_type: Mapped[str] = mapped_column(String)  # movie, song, game, book
+    interaction_type: Mapped[str] = mapped_column(String)  # onboard_anchor, like, superlike, dislike
+    weight: Mapped[float] = mapped_column(Float, default=1.0)  # +1.0 like, +2.0 superlike, -1.5 dislike
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+
+# ── Content Tables ────────────────────────────────────────────────────────────
 
 class Movie(Base):
     __tablename__ = "movie"

@@ -17,3 +17,18 @@ class RecommendationResponse(BaseModel):
     recommendations:List[RecommendationItem]
     class Config: 
         from_attributes = True
+
+class MatchedItem(BaseModel):
+    id: str
+    type: str
+    title: str
+    cover_path: Optional[str] = None
+    match_score: float
+    class Config:
+        from_attributes = True
+
+class SearchRecommendationResponse(BaseModel):
+    matched_item: MatchedItem
+    recommendations: List[RecommendationItem]
+    class Config:
+        from_attributes = True

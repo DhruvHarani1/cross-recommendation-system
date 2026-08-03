@@ -88,3 +88,42 @@ def parse_books(raw_books):
         )
 
     return books
+
+
+def search_book_by_title(query: str):
+    """Search Google Books for a book by title. Returns parsed book dict or None."""
+    params = {
+        "q": f"intitle:{query}",
+        "maxResults": 5,
+        "printType": "books",
+        "langRestrict": "en",
+        "key": BOOKS_API_KEY
+    }
+
+    try:
+        response = requests.get(BASE_URL, params=params, timeout=10)
+        response.raise_for_status()
+        items = response.json().get("items", [])
+    except requests.exceptions.RequestException:
+        return None
+
+    for book in items:
+        info = book.get("volumeInfo", {})
+        image_links = info.get("imageLinks", {})
+        title = info.get("title")
+        description = info.get("description")
+        cover = image_links.get("thumbnail")
+
+        if not title or not description or not cover:
+            continue
+
+        cover = cover.replace("http://", "https://")
+        return {
+            "book_id": book["id"],
+            "book_title": title,
+            "book_overview": description,
+            "book_cover_path": cover,
+            "authors": info.get("authors", []),
+            "categories": info.get("categories", [])
+        }
+    return None

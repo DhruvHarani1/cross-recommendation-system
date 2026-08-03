@@ -97,3 +97,36 @@ def parse_keywords(raw_keywords):
         keywords.append(keyword["name"])
     
     return keywords
+
+
+def search_movie_by_title(query: str):
+    """Search TMDB for a movie by title. Returns parsed movie dict or None."""
+    validate_api_key()
+
+    url = f"{BASE_URL}/search/movie"
+    params = {
+        "api_key": API_KEY,
+        "query": query,
+        "include_adult": False,
+        "language": "en-US",
+        "page": 1
+    }
+    headers = {"Accept": "application/json", "User-Agent": "CrossRecommendationSystem/1.0"}
+
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        response.raise_for_status()
+        results = response.json().get("results", [])
+    except requests.exceptions.RequestException:
+        return None
+
+    # Pick the first result that has a poster
+    for movie in results:
+        if movie.get("poster_path") and movie.get("overview"):
+            return {
+                "movie_id": str(movie["id"]),
+                "movie_title": movie["original_title"],
+                "movie_overview": movie["overview"],
+                "movie_poster_path": movie["poster_path"]
+            }
+    return None

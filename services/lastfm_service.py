@@ -133,3 +133,48 @@ def parse_keywords(raw_tags):
         keywords.append(tag["name"])
 
     return keywords
+
+
+def search_song_by_title(query: str):
+    """Search Last.fm for a song by title or 'Title by Artist'. Returns parsed song dict or None."""
+    validate_api_key()
+
+    params = {
+        "method": "track.search",
+        "track": query,
+        "api_key": API_KEY,
+        "format": "json",
+        "limit": 5
+    }
+
+    try:
+        response = requests.get(BASE_URL, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        tracks = data.get("results", {}).get("trackmatches", {}).get("track", [])
+    except requests.exceptions.RequestException:
+        return None
+
+    for track in tracks:
+        name = track.get("name")
+        artist = track.get("artist")
+
+        if not name or not artist:
+            continue
+
+        # Get cover image if available
+        cover_path = ""
+        images = track.get("image", [])
+        for img in reversed(images):
+            text = img.get("#text")
+            if text:
+                cover_path = text
+                break
+
+        return {
+            "song_id": f"{artist}::{name}",
+            "song_title": name,
+            "song_artist": artist,
+            "song_cover_path": cover_path
+        }
+    return None

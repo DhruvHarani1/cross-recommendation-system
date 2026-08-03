@@ -12,11 +12,48 @@ from database import Base
 class User(Base):
     __tablename__ = "users"
 
+
     user_id: Mapped[str] = mapped_column(String, primary_key=True)
-    email: Mapped[str] = mapped_column(String, nullable=True)  # For future Google OAuth
-    display_name: Mapped[str] = mapped_column(String, nullable=True)
+
+    username: Mapped[str] = mapped_column(
+        String(30),
+        unique=True,
+        nullable=False
+    )
+
+    email: Mapped[str] = mapped_column(
+        String,
+        unique=True,
+        nullable=False
+    )
+
+    password_hash: Mapped[str] = mapped_column(
+        String,
+        nullable=True
+    )
+
+    display_name: Mapped[str] = mapped_column(
+        String,
+        nullable=True
+    )
+
+    profile_picture: Mapped[str] = mapped_column(
+        String,
+        nullable=True
+    )
+
+    provider: Mapped[str] = mapped_column(
+        String,
+        default="local"
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        default=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime,
+        default=lambda: datetime.now(timezone.utc)
     )
 
 

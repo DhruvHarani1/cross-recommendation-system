@@ -6,6 +6,8 @@ import {
   Check, X, AtSign, Loader2,
 } from 'lucide-react';
 import { signup, checkUsername, checkEmail } from '../../api/auth';
+import { useAuth } from '../../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
 
 /* ─── shared easing ─── */
 const ease = [0.16, 1, 0.3, 1];
@@ -366,6 +368,7 @@ function Banner({ type, message }) {
 /* ─── Main SignUpForm ─── */
 export default function SignUpForm() {
   const navigate = useNavigate();
+  const { googleLogin } = useAuth();
 
   const [username, setUsername] = useState('');
   const [email, setEmail]       = useState('');
@@ -414,6 +417,26 @@ export default function SignUpForm() {
       setLoading(false);
     }
   };
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setError('');
+      setSuccess('');
+      setLoading(true);
+      try {
+        const loggedInUser = await googleLogin(tokenResponse.access_token);
+        setSuccess(`Welcome, ${loggedInUser.display_name || loggedInUser.username}! Redirecting…`);
+        setTimeout(() => navigate('/dashboard'), 1500);
+      } catch (err) {
+        setError(err?.response?.data?.detail ?? 'Google signup failed. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setError('Google signup failed. Please try again.');
+    }
+  });
 
   return (
     <motion.div
@@ -572,6 +595,7 @@ export default function SignUpForm() {
           <motion.button
             variants={fadeUp}
             type="button"
+            onClick={() => handleGoogleLogin()}
             whileHover={{ y: -2, borderColor: 'rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.055)' }}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}

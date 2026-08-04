@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const easeOut = [0.16, 1, 0.3, 1];
 
@@ -149,7 +150,7 @@ function SuccessBanner({ message }) {
 /* ─── LoginForm ─── */
 export default function LoginForm() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -184,6 +185,26 @@ export default function LoginForm() {
       setLoading(false);
     }
   };
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setError('');
+      setSuccess('');
+      setLoading(true);
+      try {
+        const loggedInUser = await googleLogin(tokenResponse.access_token);
+        setSuccess(`Welcome, ${loggedInUser.display_name || loggedInUser.username}! Redirecting…`);
+        setTimeout(() => navigate('/dashboard'), 1500);
+      } catch (err) {
+        setError(err?.response?.data?.detail ?? 'Google login failed. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setError('Google login failed. Please try again.');
+    }
+  });
 
   return (
     <motion.div
@@ -278,6 +299,7 @@ export default function LoginForm() {
           <motion.button
             variants={fadeUp}
             type="button"
+            onClick={() => handleGoogleLogin()}
             whileHover={{ y: -2, borderColor: 'rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.055)' }}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}

@@ -13,6 +13,10 @@ export const getCurrentUser = (token) =>
         },
     });
 
+export const googleAuth = (access_token) =>
+    api.post("/auth/google", { access_token });
+
+
 /**
  * Check if a username is available via GET /auth/check-username/{username}
  * Returns 'available' | 'taken' | 'too_short' | 'error'

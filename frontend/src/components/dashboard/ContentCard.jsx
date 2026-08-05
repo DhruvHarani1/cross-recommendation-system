@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Film, Gamepad2, BookOpen, Music, ThumbsUp, ThumbsDown, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Film, Gamepad2, BookOpen, Music, Heart, Star, X, Sparkles, Bookmark } from 'lucide-react';
 
 const TYPE_ICONS = {
   movie: Film,
@@ -9,169 +9,121 @@ const TYPE_ICONS = {
   song: Music,
 };
 
-const TYPE_COLORS = {
-  movie: { border: 'border-purple-500/30', bg: 'bg-purple-500/10', text: 'text-purple-400' },
-  game: { border: 'border-cyan-500/30', bg: 'bg-cyan-500/10', text: 'text-cyan-400' },
-  book: { border: 'border-orange-500/30', bg: 'bg-orange-500/10', text: 'text-orange-400' },
-  song: { border: 'border-emerald-500/30', bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+const getBadge = (item) => {
+  if (item.match_score >= 92) return { text: 'Excellent Match', color: 'bg-emerald-500/90' };
+  if (item.because_explanation && item.because_explanation.toLowerCase().includes('because')) return { text: 'Because You Liked', color: 'bg-purple-500/90' };
+  if (item.match_score >= 80) return { text: 'Recommended', color: 'bg-blue-500/90' };
+  return { text: 'Trending', color: 'bg-orange-500/90' };
 };
 
-export default function ContentCard({ item, onFeedback, onCardClick }) {
+export default function ContentCard({ item, onFeedback, onCardClick, onSave, savedItems = [] }) {
   const [hovered, setHovered] = useState(false);
-  const [activeFeedback, setActiveFeedback] = useState(null);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const Icon = TYPE_ICONS[item.type] || Film;
-  const colors = TYPE_COLORS[item.type] || TYPE_COLORS.movie;
-
-  const handleAction = (e, type) => {
-    e.stopPropagation();
-    setActiveFeedback(type);
-    if (onFeedback) {
-      onFeedback(item, type);
-    }
-  };
+  const Icon = TYPE_ICONS[item.type?.toLowerCase()] || Film;
+  const badge = getBadge(item);
+  const isSaved = savedItems.some(id => String(id) === String(item.id));
 
   return (
     <motion.div
       onClick={() => onCardClick?.(item)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      whileHover={{ scale: 1.06, zIndex: 10 }}
-      transition={{ duration: 0.25 }}
-      className={`relative flex-shrink-0 w-[155px] sm:w-[175px] rounded-xl overflow-hidden border backdrop-blur-md transition-all duration-300 group ${
-        activeFeedback === 'like'
-          ? 'border-emerald-500/50 bg-emerald-500/[0.04]'
-          : activeFeedback === 'superlike'
-          ? 'border-purple-500/50 bg-purple-500/[0.04]'
-          : activeFeedback === 'dislike'
-          ? 'border-red-500/30 opacity-40'
-          : 'border-white/[0.06] bg-white/[0.02]'
-      }`}
+      whileHover={{ y: -8 }}
+      className="relative flex-shrink-0 w-[160px] sm:w-[200px] rounded-[18px] overflow-hidden cursor-pointer group transition-all duration-500 hover:shadow-[0_20px_40px_rgba(139,92,246,0.15)]"
     >
-      {/* Cover image */}
-      <div className="relative aspect-[2/3] overflow-hidden bg-white/[0.03]">
-        {!imgLoaded && item.cover_path && (
-          <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] via-white/[0.08] to-white/[0.03] animate-pulse flex items-center justify-center">
+      {/* Poster Container */}
+      <div className="relative aspect-[2/3] w-full bg-[#111] overflow-hidden rounded-[18px]">
+        {/* Placeholder skeleton */}
+        {!imgLoaded && (
+          <div className="absolute inset-0 bg-white/[0.02] animate-pulse flex items-center justify-center">
             <Icon className="w-8 h-8 text-white/10" />
           </div>
         )}
+        
         {item.cover_path ? (
           <img
             src={item.cover_path}
             alt={item.title}
             onLoad={() => setImgLoaded(true)}
-            className={`w-full h-full object-cover transition-all duration-500 group-hover:brightness-105 ${
+            className={`w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 ${
               imgLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full bg-white/[0.04] flex items-center justify-center">
-            <Icon className="w-10 h-10 text-white/10" />
+          <div className="w-full h-full bg-[#111] flex items-center justify-center">
+            <Icon className="w-10 h-10 text-white/20" />
           </div>
         )}
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {/* Dark gradient at bottom for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#090909] via-[#090909]/20 to-transparent opacity-80" />
 
-        {/* Match score badge */}
-        {item.match_score && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-sm border border-white/10 text-emerald-400 text-[10px] font-semibold">
-            {item.match_score}%
-          </div>
-        )}
+        {/* Hover glass overlay */}
+        <div className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ${hovered ? 'opacity-100' : 'opacity-0'}`} />
 
-        {/* Type badge */}
-        <div className={`absolute top-2 right-2 p-1.5 rounded-lg ${colors.bg} ${colors.border} border backdrop-blur-sm`}>
-          <Icon className={`w-3 h-3 ${colors.text}`} />
+        {/* Recommendation Badge (Single) */}
+        <div className="absolute top-3 left-3 z-10">
+          <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wide uppercase text-white shadow-lg ${badge.color}`}>
+            {badge.text}
+          </span>
         </div>
 
-        {/* Action Overlay (Like / Superlike / Dislike) */}
-        {hovered && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-x-0 bottom-0 p-3 space-y-2.5 z-20"
-          >
-            {/* Action buttons bar */}
-            <div className="flex items-center justify-center gap-2">
-              {/* Like */}
+        {/* Hover Action Buttons */}
+        <AnimatePresence>
+          {hovered && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 flex items-center justify-center gap-3 z-20"
+            >
               <button
-                type="button"
-                onClick={(e) => handleAction(e, 'like')}
-                title="Like — show more like this"
-                className={`p-2 rounded-full border transition-all duration-200 ${
-                  activeFeedback === 'like'
-                    ? 'bg-emerald-500 text-white border-emerald-400 scale-110 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
-                    : 'bg-black/60 border-white/20 text-white/70 hover:text-white hover:bg-emerald-500/40 hover:border-emerald-400/60'
-                }`}
+                onClick={(e) => { e.stopPropagation(); onFeedback?.(item, 'dislike'); }}
+                className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-red-500 hover:border-red-500 transition-all duration-200 shadow-lg hover:scale-110"
+                title="Not Interested"
               >
-                <ThumbsUp className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
-
-              {/* Superlike */}
+              
               <button
-                type="button"
-                onClick={(e) => handleAction(e, 'superlike')}
-                title="Superlike — heavily prioritize this vibe!"
-                className={`p-2 rounded-full border transition-all duration-200 ${
-                  activeFeedback === 'superlike'
-                    ? 'bg-purple-500 text-white border-purple-400 scale-110 shadow-[0_0_12px_rgba(168,85,247,0.4)]'
-                    : 'bg-black/60 border-white/20 text-white/70 hover:text-white hover:bg-purple-500/40 hover:border-purple-400/60'
-                }`}
+                onClick={(e) => { e.stopPropagation(); onFeedback?.(item, 'like'); }}
+                className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-emerald-500 hover:border-emerald-500 transition-all duration-200 shadow-lg hover:scale-110"
+                title="Like"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Heart className="w-5 h-5" />
               </button>
-
-              {/* Dislike */}
+              
               <button
-                type="button"
-                onClick={(e) => handleAction(e, 'dislike')}
-                title="Dislike — show less like this"
-                className={`p-2 rounded-full border transition-all duration-200 ${
-                  activeFeedback === 'dislike'
-                    ? 'bg-red-500 text-white border-red-400 scale-110 shadow-[0_0_12px_rgba(239,68,68,0.4)]'
-                    : 'bg-black/60 border-white/20 text-white/70 hover:text-white hover:bg-red-500/40 hover:border-red-400/60'
-                }`}
+                onClick={(e) => { e.stopPropagation(); onFeedback?.(item, 'superlike'); }}
+                className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-purple-500 hover:border-purple-500 transition-all duration-200 shadow-lg hover:scale-110"
+                title="Super Like"
               >
-                <ThumbsDown className="w-3.5 h-3.5" />
+                <Star className="w-4 h-4" />
               </button>
-            </div>
-
-            {/* Explanation / Tags */}
-            {item.because_explanation && (
-              <p className="text-white/60 text-[10px] leading-tight line-clamp-2 text-center">
-                {item.because_explanation}
-              </p>
-            )}
-          </motion.div>
-        )}
-      </div>
-
-      {/* Title bar */}
-      <div className="p-2.5 space-y-0.5">
-        <div className="flex items-center justify-between gap-1">
-          <p className="text-white/85 text-xs font-medium leading-tight line-clamp-1">
-            {item.title}
-          </p>
-          {activeFeedback && (
-            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded capitalize ${
-              activeFeedback === 'like' ? 'bg-emerald-500/20 text-emerald-300' :
-              activeFeedback === 'superlike' ? 'bg-purple-500/20 text-purple-300' :
-              'bg-red-500/20 text-red-300'
-            }`}>
-              {activeFeedback}
-            </span>
+              
+              <button
+                onClick={(e) => { e.stopPropagation(); onSave?.(item); }}
+                className={`w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all duration-200 shadow-lg hover:scale-110 ${isSaved ? 'text-blue-400 border-blue-400 bg-blue-500/20' : 'text-white hover:bg-blue-500 hover:border-blue-500'}`}
+                title={isSaved ? "Saved to Library" : "Save to Library"}
+              >
+                <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
+              </button>
+            </motion.div>
           )}
-        </div>
-        {item.artist && (
-          <p className="text-white/30 text-[10px] line-clamp-1">{item.artist}</p>
-        )}
-        <div className="flex items-center gap-1 pt-0.5">
-          <Icon className={`w-2.5 h-2.5 ${colors.text}`} />
-          <span className="text-white/25 text-[9px] capitalize">{item.type}</span>
+        </AnimatePresence>
+
+        {/* Info Area (Always visible, inside the poster bounds) */}
+        <div className="absolute bottom-0 inset-x-0 p-4 z-10">
+          <div className="flex items-center gap-1.5 text-white/60 mb-1">
+            <Icon className="w-3 h-3" />
+            <span className="text-[10px] font-medium tracking-widest uppercase">{item.type}</span>
+          </div>
+          <h3 className="text-white font-semibold text-sm sm:text-base leading-tight line-clamp-2">
+            {item.title}
+          </h3>
         </div>
       </div>
     </motion.div>

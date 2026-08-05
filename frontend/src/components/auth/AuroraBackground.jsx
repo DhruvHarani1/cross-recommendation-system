@@ -16,7 +16,7 @@ export default function AuroraBackground() {
 
       <div
         className="absolute inset-0"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(5,5,5,0.65) 100%)' }}
+        style= {{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(5,5,5,0.65) 100%)' }}
       />
 
       <div

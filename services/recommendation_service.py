@@ -35,13 +35,20 @@ def get_keywords_str(db: Session, content_id: str, content_type: str) -> str:
         keywords = []
     return ", ".join([k.keyword for k in keywords])
 
+def _format_movie_poster(path: str) -> Optional[str]:
+    if not path or path == "N/A":
+        return None
+    if path.startswith("/"):
+        return f"https://image.tmdb.org/t/p/w500{path}"
+    return path
+
 def resolve_metadata(db: Session, item_id: str, item_type: str):
     """Retrieves title and cover image for any given item type."""
     if item_type == "movie":
         item = db.get(Movie, item_id)
         return {
             "title": item.movie_title if item else f"Movie {item_id}",
-            "cover_path": item.movie_poster_path if item else None
+            "cover_path": _format_movie_poster(item.movie_poster_path) if item else None
         }
     elif item_type == "game":
         item = db.get(Game, item_id)
@@ -76,7 +83,7 @@ def batch_resolve_metadata(db: Session, items: List[tuple]) -> dict:
 
     if movie_ids:
         for m in db.query(Movie).filter(Movie.movie_id.in_(movie_ids)).all():
-            results[("movie", m.movie_id)] = {"title": m.movie_title, "cover_path": m.movie_poster_path}
+            results[("movie", m.movie_id)] = {"title": m.movie_title, "cover_path": _format_movie_poster(m.movie_poster_path)}
 
     if game_ids:
         for g in db.query(Game).filter(Game.game_id.in_(game_ids)).all():
@@ -129,26 +136,27 @@ def get_or_create_embedding(db: Session , content_id :str , content_type:str)->n
     if  record:
         return np.array(record.embedding)
     keyword_str = get_keywords_str(db,content_id,content_type)
+    weighted_kws = f"{keyword_str}, {keyword_str}" if keyword_str else ""
     if content_type == "movie":
         item = db.get(Movie, content_id)
         if not item:
             raise ValueError(f"Movie with ID {content_id} not found.")
-        input_text = f"Title: {item.movie_title}. Overview: {item.movie_overview}. Keywords: {keyword_str}"
+        input_text = f"Title: {item.movie_title}. Overview: {item.movie_overview}. Keywords: {weighted_kws}"
     elif content_type == "game":
         item = db.get(Game, content_id)
         if not item:
             raise ValueError(f"Game with ID {content_id} not found.")
-        input_text = f"Title: {item.game_title}. Genres: {item.game_genres}. Keywords: {keyword_str}"
+        input_text = f"Title: {item.game_title}. Genres: {item.game_genres}. Keywords: {weighted_kws}"
     elif content_type == "song":
         item = db.get(Song, content_id)
         if not item:
             raise ValueError(f"Song with ID {content_id} not found.")
-        input_text = f"Title: {item.song_title}. Artist: {item.song_artist}. Keywords: {keyword_str}"
+        input_text = f"Title: {item.song_title}. Artist: {item.song_artist}. Keywords: {weighted_kws}"
     elif content_type == "book":
         item = db.get(Book, content_id)
         if not item:
             raise ValueError(f"Book with ID {content_id} not found.")
-        input_text = f"Title: {item.book_title}. Overview: {item.book_overview}. Category: {item.book_categories}. Keywords: {keyword_str}"
+        input_text = f"Title: {item.book_title}. Overview: {item.book_overview}. Category: {item.book_categories}. Keywords: {weighted_kws}"
     elif content_type == "keyword":
         input_text = f"Theme and vibe: {content_id}"
     elif content_type == "preference":
@@ -178,7 +186,7 @@ def get_recommendations(db: Session, source_id: str, source_type: str, target_ty
       - Single type (e.g. ['movie']) returns results from only that category.
     """
     if not target_types or "all" in target_types:
-        filter_types = None  # no filter — include everything
+        filter_types = ["movie", "game", "book", "song"]  # explicitly exclude 'keyword' or other internal types
     else:
         filter_types = target_types
 

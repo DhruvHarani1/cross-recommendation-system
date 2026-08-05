@@ -4,7 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from database import get_db
-from models import User, UserInteraction, ContentEmbedding
+from models import User, UserInteraction, ContentEmbedding, UserLibrary
 from services.personalization_service import (
     onboard_user,
     get_user_profile,
@@ -385,3 +385,89 @@ def dashboard_feed(
         "sections": sections,
         "experience_bundle": experience_bundle_data
     }
+
+# ── Library Endpoints ─────────────────────────────────────────────────────────
+
+class LibraryItemRequest(BaseModel):
+    content_id: str
+    content_type: str
+
+@router.get("/users/{user_id}/library")
+def get_library(user_id: str, db: Session = Depends(get_db)):
+    """Fetch all saved items in the user's library."""
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    saved_items = db.query(UserLibrary).filter(UserLibrary.user_id == user_id).order_by(UserLibrary.added_at.desc()).all()
+    
+    if not saved_items:
+        return {"items": []}
+        
+    items_tuples = [(item.content_id, item.content_type) for item in saved_items]
+    
+    from services.recommendation_service import batch_resolve_metadata
+    metadata_map = batch_resolve_metadata(db, items_tuples)
+    
+    results = []
+    for item in saved_items:
+        meta = metadata_map.get((item.content_type, item.content_id), {})
+        title = meta.get("title", f"{item.content_type.capitalize()} {item.content_id}")
+        cover_path = meta.get("cover_path")
+        
+        # fix TMDB relative paths
+        if item.content_type == "movie" and cover_path and cover_path.startswith("/"):
+            cover_path = f"https://image.tmdb.org/t/p/w500{cover_path}"
+            
+        results.append({
+            "id": item.content_id,
+            "type": item.content_type,
+            "title": title,
+            "cover_path": cover_path,
+            "added_at": item.added_at
+        })
+        
+    return {"items": results}
+
+@router.post("/users/{user_id}/library")
+def save_to_library(user_id: str, request: LibraryItemRequest, db: Session = Depends(get_db)):
+    """Save an item to the user's library."""
+    if request.content_type not in VALID_TYPES:
+        raise HTTPException(status_code=422, detail=f"Invalid content type: {request.content_type}")
+        
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    existing = db.query(UserLibrary).filter_by(
+        user_id=user_id,
+        content_id=request.content_id,
+        content_type=request.content_type
+    ).first()
+    
+    if not existing:
+        new_item = UserLibrary(
+            user_id=user_id,
+            content_id=request.content_id,
+            content_type=request.content_type
+        )
+        db.add(new_item)
+        db.commit()
+        
+    return {"status": "success", "message": "Saved to library"}
+
+@router.delete("/users/{user_id}/library/{content_type}/{content_id}")
+def remove_from_library(user_id: str, content_type: str, content_id: str, db: Session = Depends(get_db)):
+    """Remove an item from the user's library."""
+    item = db.query(UserLibrary).filter_by(
+        user_id=user_id,
+        content_id=content_id,
+        content_type=content_type
+    ).first()
+    
+    if item:
+        db.delete(item)
+        db.commit()
+        return {"status": "success", "message": "Removed from library"}
+    
+    raise HTTPException(status_code=404, detail="Item not found in library")

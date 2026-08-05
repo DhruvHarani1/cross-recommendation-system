@@ -21,6 +21,7 @@ app.add_middleware(
 )
 
 from database import engine, Base
+import models  # noqa: F401 — register all SQLAlchemy models with Base
 
 Base.metadata.create_all(bind=engine)
 

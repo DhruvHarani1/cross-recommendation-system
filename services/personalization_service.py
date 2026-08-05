@@ -19,19 +19,12 @@ from models import (
     ContentEmbedding
 )
 from services.recommendation_service import (
-    get_model, get_or_create_embedding, resolve_metadata, get_keywords_str
+    get_model, get_or_create_embedding, resolve_metadata, get_keywords_str,
+    batch_resolve_metadata, batch_get_keywords
 )
 
 
-# ── Mood Presets ──────────────────────────────────────────────────────────────
-# Maps mood labels to seed phrases for embedding comparison
-MOOD_PRESETS = {
-    "dark_immersive": "dark atmospheric horror dystopian noir bleak survival isolation dread",
-    "adrenaline_rush": "action fast paced explosive combat racing shooter intense thrill war",
-    "cozy_escape": "wholesome cozy heartwarming romance relaxing pastoral gentle warm slice of life",
-    "mind_bending": "puzzle mystery philosophical time travel inception paradox cerebral twist",
-    "epic_fantasy": "fantasy epic dragon quest magic kingdom sword adventure mythology legend"
-}
+
 
 # Maps interaction types to their weights
 INTERACTION_WEIGHTS = {
@@ -252,6 +245,9 @@ def get_tag_preferences(db: Session, user_id: str, top_n: int = 10) -> List[dict
 
     tag_scores = Counter()
     for inter in interactions:
+        if inter.interaction_type == "keyword_preference" or inter.content_type == "keyword":
+            tag_scores[inter.content_id.lower()] += inter.weight
+            continue
         kw_str = get_keywords_str(db, inter.content_id, inter.content_type)
         if not kw_str:
             continue
@@ -291,22 +287,31 @@ def generate_because_explanation(
 ) -> str:
     """Generate a human-readable 'Because you loved...' explanation."""
     rec_kws = get_keywords_str(db, recommended_id, recommended_type)
+    if not rec_kws:
+        return f"Matches your taste profile across {recommended_type} themes"
+
     rec_kw_set = set(kw.strip().lower() for kw in rec_kws.split(", ") if len(kw.strip()) >= 3)
 
-    # Find which user-liked items share tags with this recommendation
+    # Find which user-liked content items (movies, games, books, songs) share tags
     interactions = (
         db.query(UserInteraction)
-        .filter(UserInteraction.user_id == user_id, UserInteraction.weight > 0)
+        .filter(
+            UserInteraction.user_id == user_id,
+            UserInteraction.weight > 0,
+            UserInteraction.content_type.in_(["movie", "game", "book", "song"])
+        )
+        .limit(10)
         .all()
     )
 
-    # Find shared themes between user's liked items and this recommendation
     best_overlap_title = source_title
     best_overlap_tags = []
 
     for inter in interactions:
         inter_meta = resolve_metadata(db, inter.content_id, inter.content_type)
         inter_kws = get_keywords_str(db, inter.content_id, inter.content_type)
+        if not inter_kws:
+            continue
         inter_kw_set = set(kw.strip().lower() for kw in inter_kws.split(", ") if len(kw.strip()) >= 3)
 
         shared = rec_kw_set & inter_kw_set
@@ -330,69 +335,88 @@ def get_personalized_recommendations(
     user_id: str,
     target_types: List[str] = None,
     limit: int = 10,
-    alpha: float = 0.4
+    alpha: float = 0.4,
+    pre_taste_vector: Optional[np.ndarray] = None,
+    pre_tag_dict: Optional[dict] = None,
+    pre_all_embeddings: Optional[List[ContentEmbedding]] = None,
+    pre_interacted: Optional[set] = None
 ) -> Optional[dict]:
-    """Generate personalized recommendations blending taste vector + tag bridge.
-
-    alpha: weight for personalization (0.0 = pure content similarity, 1.0 = pure taste match)
-    """
-    taste_vector = compute_taste_vector(db, user_id)
+    """Generate personalized recommendations blending taste vector + tag bridge using vectorized NumPy matrix math."""
+    taste_vector = pre_taste_vector if pre_taste_vector is not None else compute_taste_vector(db, user_id)
     if taste_vector is None:
         return None
 
-    tag_prefs = get_tag_preferences(db, user_id, top_n=20)
-    tag_dict = {t["tag"]: t["score"] for t in tag_prefs}
-
-    # Filter content types
-    if not target_types or "all" in target_types:
-        filter_types = None
+    if pre_tag_dict is not None:
+        tag_dict = pre_tag_dict
     else:
-        filter_types = target_types
+        tag_prefs = get_tag_preferences(db, user_id, top_n=20)
+        tag_dict = {t["tag"]: t["score"] for t in tag_prefs}
 
-    # Get all embeddings
-    emb_query = db.query(ContentEmbedding)
-    if filter_types:
-        emb_query = emb_query.filter(ContentEmbedding.content_type.in_(filter_types))
-    all_embeddings = emb_query.all()
+    filter_types = None if not target_types or "all" in target_types else target_types
+
+    if pre_all_embeddings is not None:
+        if filter_types:
+            all_embeddings = [c for c in pre_all_embeddings if c.content_type in filter_types]
+        else:
+            all_embeddings = pre_all_embeddings
+    else:
+        emb_query = db.query(ContentEmbedding)
+        if filter_types:
+            emb_query = emb_query.filter(ContentEmbedding.content_type.in_(filter_types))
+        all_embeddings = emb_query.all()
 
     if not all_embeddings:
         return None
 
     # Exclude items the user has already interacted with
-    interacted = set()
-    user_interactions = db.query(UserInteraction).filter(UserInteraction.user_id == user_id).all()
-    for inter in user_interactions:
-        interacted.add((inter.content_id, inter.content_type))
+    if pre_interacted is not None:
+        interacted = pre_interacted
+    else:
+        user_interactions = db.query(UserInteraction).filter(UserInteraction.user_id == user_id).all()
+        interacted = {(inter.content_id, inter.content_type) for inter in user_interactions}
+
+    candidates = [c for c in all_embeddings if (c.content_id, c.content_type) not in interacted]
+    if not candidates:
+        return None
+
+    # Vectorized similarity matrix calculation
+    emb_matrix = np.array([c.embedding for c in candidates])
+    taste_norm = np.linalg.norm(taste_vector)
+    cand_norms = np.linalg.norm(emb_matrix, axis=1)
+
+    cand_norms[cand_norms == 0] = 1.0
+    if taste_norm == 0:
+        taste_norm = 1.0
+
+    vector_sims = np.dot(emb_matrix, taste_vector) / (cand_norms * taste_norm)
+
+    # Take top 60 candidate indices by vector similarity for tag scoring
+    top_indices = np.argsort(vector_sims)[::-1][:60]
+    top_candidates = [candidates[idx] for idx in top_indices]
+    cand_keys = [(c.content_id, c.content_type) for c in top_candidates]
+
+    # Single batch SQL query for keywords across all top candidates
+    keywords_map = batch_get_keywords(db, cand_keys)
+    max_possible_tag = sum(sorted(tag_dict.values(), reverse=True)[:5]) if tag_dict else 1.0
 
     scored_items = []
-    for cand in all_embeddings:
-        if (cand.content_id, cand.content_type) in interacted:
-            continue
+    for idx in top_indices:
+        cand = candidates[idx]
+        v_sim = float(vector_sims[idx])
 
-        cand_arr = np.array(cand.embedding)
-
-        # Vector similarity (taste centroid → candidate)
-        dot = np.dot(taste_vector, cand_arr)
-        norm_t = np.linalg.norm(taste_vector)
-        norm_c = np.linalg.norm(cand_arr)
-        vector_sim = float(dot / (norm_t * norm_c)) if norm_t and norm_c else 0.0
-
-        # Tag bridge score (keyword overlap)
-        cand_kws = get_keywords_str(db, cand.content_id, cand.content_type)
+        # Tag bridge score from pre-fetched batch dictionary
+        cand_kws = keywords_map.get((cand.content_type, cand.content_id), "")
         tag_score = 0.0
         matched_tags = []
-        for kw in cand_kws.split(", "):
-            kw_lower = kw.strip().lower()
-            if kw_lower in tag_dict:
-                tag_score += tag_dict[kw_lower]
-                matched_tags.append(kw_lower)
+        if cand_kws:
+            for kw in cand_kws.split(", "):
+                kw_lower = kw.strip().lower()
+                if kw_lower in tag_dict:
+                    tag_score += tag_dict[kw_lower]
+                    matched_tags.append(kw_lower)
 
-        # Normalize tag score to 0-1 range
-        max_possible_tag = sum(sorted(tag_dict.values(), reverse=True)[:5]) if tag_dict else 1.0
         tag_sim = min(tag_score / max_possible_tag, 1.0) if max_possible_tag > 0 else 0.0
-
-        # Blend
-        final_score = (1 - alpha) * vector_sim + alpha * tag_sim
+        final_score = (1 - alpha) * v_sim + alpha * tag_sim
 
         scored_items.append({
             "content_id": cand.content_id,
@@ -403,7 +427,10 @@ def get_personalized_recommendations(
 
     scored_items.sort(key=lambda x: x["score"], reverse=True)
 
-    # Diversity: ensure mix of content types in top results
+    # Batch resolve metadata for selected scored items
+    selected_keys = [(item["content_id"], item["content_type"]) for item in scored_items[:limit*2]]
+    metadata_map = batch_resolve_metadata(db, selected_keys)
+
     recommendations = []
     type_counts = Counter()
     max_per_type = max(2, limit // 3)
@@ -412,13 +439,12 @@ def get_personalized_recommendations(
         if len(recommendations) >= limit:
             break
         if filter_types and len(filter_types) == 1:
-            # Single type: no diversity balancing needed
             pass
         elif type_counts[item["content_type"]] >= max_per_type:
             continue
         type_counts[item["content_type"]] += 1
 
-        meta = resolve_metadata(db, item["content_id"], item["content_type"])
+        meta = metadata_map.get((item["content_type"], item["content_id"]), {"title": item["content_id"], "cover_path": None})
         explanation = generate_because_explanation(db, user_id, item["content_id"], item["content_type"])
 
         rec = {
@@ -431,11 +457,8 @@ def get_personalized_recommendations(
             "matched_tags": item["matched_tags"]
         }
 
-        # Add extra metadata for songs (artist)
-        if item["content_type"] == "song":
-            song = db.get(Song, item["content_id"])
-            if song:
-                rec["artist"] = song.song_artist
+        if item["content_type"] == "song" and "artist" in meta:
+            rec["artist"] = meta["artist"]
 
         recommendations.append(rec)
 
@@ -561,105 +584,4 @@ def get_experience_bundle(
     }
 
 
-# ── Mood Mode ─────────────────────────────────────────────────────────────────
 
-def get_mood_recommendations(
-    db: Session,
-    mood: str,
-    user_id: str = None,
-    target_types: List[str] = None,
-    limit: int = 10
-) -> Optional[dict]:
-    """Get cross-domain recommendations filtered by mood preset.
-    Optionally personalized with user's taste vector."""
-    if mood not in MOOD_PRESETS:
-        return None
-
-    mood_text = MOOD_PRESETS[mood]
-    mood_vector = get_model().encode(mood_text)
-    mood_arr = np.array(mood_vector)
-
-    # Optionally blend with user taste
-    taste_vector = None
-    if user_id:
-        taste_vector = compute_taste_vector(db, user_id)
-
-    # Filter types
-    if not target_types or "all" in target_types:
-        filter_types = None
-    else:
-        filter_types = target_types
-
-    emb_query = db.query(ContentEmbedding)
-    if filter_types:
-        emb_query = emb_query.filter(ContentEmbedding.content_type.in_(filter_types))
-    all_embeddings = emb_query.all()
-
-    if not all_embeddings:
-        return None
-
-    scored = []
-    for cand in all_embeddings:
-        cand_arr = np.array(cand.embedding)
-
-        # Mood similarity
-        dot = np.dot(mood_arr, cand_arr)
-        norm_m = np.linalg.norm(mood_arr)
-        norm_c = np.linalg.norm(cand_arr)
-        mood_sim = float(dot / (norm_m * norm_c)) if norm_m and norm_c else 0.0
-
-        # Taste bonus
-        taste_bonus = 0.0
-        if taste_vector is not None:
-            t_dot = np.dot(taste_vector, cand_arr)
-            t_norm = np.linalg.norm(taste_vector)
-            taste_bonus = float(t_dot / (t_norm * norm_c)) * 0.3 if t_norm and norm_c else 0.0
-
-        total = mood_sim + taste_bonus
-
-        scored.append({
-            "content_id": cand.content_id,
-            "content_type": cand.content_type,
-            "score": total
-        })
-
-    scored.sort(key=lambda x: x["score"], reverse=True)
-
-    # Diversity balancing
-    recommendations = []
-    type_counts = Counter()
-    max_per_type = max(2, limit // 3)
-
-    for item in scored:
-        if len(recommendations) >= limit:
-            break
-        if filter_types and len(filter_types) == 1:
-            pass
-        elif type_counts[item["content_type"]] >= max_per_type:
-            continue
-        type_counts[item["content_type"]] += 1
-
-        meta = resolve_metadata(db, item["content_id"], item["content_type"])
-        rec = {
-            "id": item["content_id"],
-            "type": item["content_type"],
-            "title": meta["title"],
-            "cover_path": meta["cover_path"],
-            "match_score": round(item["score"] * 100, 1)
-        }
-
-        if item["content_type"] == "song":
-            song = db.get(Song, item["content_id"])
-            if song:
-                rec["artist"] = song.song_artist
-
-        recommendations.append(rec)
-
-    mood_label = mood.replace("_", " ").title()
-
-    return {
-        "mood": mood,
-        "mood_label": mood_label,
-        "user_id": user_id,
-        "recommendations": recommendations
-    }

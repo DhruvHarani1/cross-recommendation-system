@@ -406,8 +406,15 @@ export default function SignUpForm() {
       setTimeout(() => navigate('/login'), 1800);
     } catch (err) {
       // Backend returned a JSON error (e.g. duplicate username/email)
-      if (err?.response?.data?.detail) {
-        setError(err.response.data.detail);
+      const detail = err?.response?.data?.detail;
+      if (detail) {
+        if (typeof detail === 'string') {
+          setError(detail);
+        } else if (Array.isArray(detail)) {
+          setError(detail.map((d) => d.msg || d.message || JSON.stringify(d)).join('; '));
+        } else {
+          setError(JSON.stringify(detail));
+        }
       } else if (err?.code === 'ERR_NETWORK' || err?.code === 'ECONNREFUSED') {
         setError('Cannot reach the server. Make sure the backend is running on port 8000.');
       } else {
@@ -425,10 +432,13 @@ export default function SignUpForm() {
       setLoading(true);
       try {
         const loggedInUser = await googleLogin(tokenResponse.access_token);
+        const destination = loggedInUser?.is_onboarded ? '/dashboard' : '/onboarding';
         setSuccess(`Welcome, ${loggedInUser.display_name || loggedInUser.username}! Redirecting…`);
-        setTimeout(() => navigate('/dashboard'), 1500);
+        setTimeout(() => navigate(destination), 1500);
       } catch (err) {
-        setError(err?.response?.data?.detail ?? 'Google signup failed. Please try again.');
+        const gDetail = err?.response?.data?.detail;
+        const gMsg = typeof gDetail === 'string' ? gDetail : 'Google signup failed. Please try again.';
+        setError(gMsg);
       } finally {
         setLoading(false);
       }

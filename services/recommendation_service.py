@@ -62,6 +62,68 @@ def resolve_metadata(db: Session, item_id: str, item_type: str):
             "cover_path": item.book_cover_path if item else None
         }
     return {"title": f"{item_type.capitalize()} {item_id}", "cover_path": None}
+
+def batch_resolve_metadata(db: Session, items: List[tuple]) -> dict:
+    """Batch fetch title and cover_path for a list of (content_id, content_type) tuples."""
+    results = {}
+    if not items:
+        return results
+
+    movie_ids = [cid for cid, ctype in items if ctype == "movie"]
+    game_ids = [cid for cid, ctype in items if ctype == "game"]
+    book_ids = [cid for cid, ctype in items if ctype == "book"]
+    song_ids = [cid for cid, ctype in items if ctype == "song"]
+
+    if movie_ids:
+        for m in db.query(Movie).filter(Movie.movie_id.in_(movie_ids)).all():
+            results[("movie", m.movie_id)] = {"title": m.movie_title, "cover_path": m.movie_poster_path}
+
+    if game_ids:
+        for g in db.query(Game).filter(Game.game_id.in_(game_ids)).all():
+            results[("game", g.game_id)] = {"title": g.game_title, "cover_path": g.game_cover_path}
+
+    if book_ids:
+        for b in db.query(Book).filter(Book.book_id.in_(book_ids)).all():
+            results[("book", b.book_id)] = {"title": b.book_title, "cover_path": b.book_cover_path}
+
+    if song_ids:
+        for s in db.query(Song).filter(Song.song_id.in_(song_ids)).all():
+            results[("song", s.song_id)] = {"title": s.song_title, "cover_path": s.song_cover_path, "artist": s.song_artist}
+
+    for cid, ctype in items:
+        if (ctype, cid) not in results:
+            results[(ctype, cid)] = {"title": f"{ctype.capitalize()} {cid}", "cover_path": None}
+
+    return results
+
+def batch_get_keywords(db: Session, items: List[tuple]) -> dict:
+    """Batch fetch comma-separated keywords for a list of (content_id, content_type) tuples."""
+    raw = defaultdict(list)
+    if not items:
+        return {}
+
+    movie_ids = [cid for cid, ctype in items if ctype == "movie"]
+    game_ids = [cid for cid, ctype in items if ctype == "game"]
+    book_ids = [cid for cid, ctype in items if ctype == "book"]
+    song_ids = [cid for cid, ctype in items if ctype == "song"]
+
+    if movie_ids:
+        for k in db.query(MovieKeyword).filter(MovieKeyword.movie_id.in_(movie_ids)).all():
+            raw[("movie", k.movie_id)].append(k.keyword)
+
+    if game_ids:
+        for k in db.query(GameKeyword).filter(GameKeyword.game_id.in_(game_ids)).all():
+            raw[("game", k.game_id)].append(k.keyword)
+
+    if book_ids:
+        for k in db.query(BookKeyword).filter(BookKeyword.book_id.in_(book_ids)).all():
+            raw[("book", k.book_id)].append(k.keyword)
+
+    if song_ids:
+        for k in db.query(SongKeyword).filter(SongKeyword.song_id.in_(song_ids)).all():
+            raw[("song", k.song_id)].append(k.keyword)
+
+    return {key: ", ".join(vals) for key, vals in raw.items()}
 def get_or_create_embedding(db: Session , content_id :str , content_type:str)->np.array:
     record = db.query(ContentEmbedding).filter_by(content_type=content_type,content_id=content_id).first()
     if  record:
@@ -87,6 +149,11 @@ def get_or_create_embedding(db: Session , content_id :str , content_type:str)->n
         if not item:
             raise ValueError(f"Book with ID {content_id} not found.")
         input_text = f"Title: {item.book_title}. Overview: {item.book_overview}. Category: {item.book_categories}. Keywords: {keyword_str}"
+    elif content_type == "keyword":
+        input_text = f"Theme and vibe: {content_id}"
+    elif content_type == "preference":
+        # Preferences like 'movie' or 'game' content type don't have embeddings
+        raise ValueError(f"Preference item {content_id} has no direct embedding.")
     else:
         raise ValueError(f"Invalid content type: {content_type}")
     

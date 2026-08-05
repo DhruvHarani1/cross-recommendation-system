@@ -51,6 +51,10 @@ class User(Base):
         default=True
     )
 
+    is_onboarded: Mapped[bool] = mapped_column(
+        default=False
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(timezone.utc)

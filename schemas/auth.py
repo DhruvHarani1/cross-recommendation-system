@@ -17,6 +17,7 @@ class UserResponse(BaseModel):
     username: str
     email: EmailStr
     display_name: str | None = None
+    is_onboarded: bool = False
 
     class Config:
         from_attributes = True

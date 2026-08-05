@@ -12,6 +12,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
 import Explore from './pages/Explore';
+import Library from './pages/Library';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function LandingPage() {
@@ -69,6 +70,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Explore />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/library"
+        element={
+          <ProtectedRoute>
+            <Library />
           </ProtectedRoute>
         }
       />

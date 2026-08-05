@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  LogOut, Sparkles, Loader2, RefreshCw, ThumbsUp, ThumbsDown,
-  Film, Gamepad2, BookOpen, Music
-} from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Loader2, RefreshCw, ThumbsUp, ThumbsDown, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import AuroraBackground from '../components/auth/AuroraBackground';
+import { getLibrary, saveToLibrary, removeFromLibrary } from '../api/user';
+import MainNavbar from '../components/MainNavbar';
 import HeroCard from '../components/dashboard/HeroCard';
 import ContentRow from '../components/dashboard/ContentRow';
 import ExperienceBundleRow from '../components/dashboard/ExperienceBundleRow';
@@ -15,39 +12,35 @@ import ItemModal from '../components/dashboard/ItemModal';
 
 const ease = [0.16, 1, 0.3, 1];
 
-const CATEGORY_TABS = [
-  { id: 'all', label: 'All Feed', emoji: '✨' },
-  { id: 'movie', label: 'Movies', icon: Film, emoji: '🎬' },
-  { id: 'game', label: 'Games', icon: Gamepad2, emoji: '🎮' },
-  { id: 'book', label: 'Books', icon: BookOpen, emoji: '📚' },
-  { id: 'song', label: 'Music', icon: Music, emoji: '🎵' },
-];
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
-}
+// Global cache to prevent re-fetching on navigation
+let globalFeedCache = null;
+let globalBundleCache = null;
+let lastFetchUserId = null;
+let lastFetchTime = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export default function Dashboard() {
-  const { user, token, logout } = useAuth();
-  const navigate = useNavigate();
-
+  const { user, token } = useAuth();
+  
   const [feedData, setFeedData] = useState(null);
   const [bundleData, setBundleData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
+  const [savedItems, setSavedItems] = useState([]);
 
-  // Filter & Modal State
-  const [activeCategory, setActiveCategory] = useState('all');
   const [selectedItemModal, setSelectedItemModal] = useState(null);
 
-  const displayName = user?.display_name || user?.username || 'there';
-
-  const fetchFeed = async () => {
+  const fetchFeed = async (forceRefresh = false) => {
     if (!user?.user_id) return;
+    
+    if (!forceRefresh && globalFeedCache && lastFetchUserId === user.user_id && (Date.now() - lastFetchTime < CACHE_TTL)) {
+      setFeedData(globalFeedCache);
+      if (globalBundleCache) setBundleData(globalBundleCache);
+      setLoading(false);
+      return;
+    }
+
     if (!feedData) setLoading(true);
     setError('');
 
@@ -55,10 +48,18 @@ export default function Dashboard() {
       const res = await api.get(`/users/${user.user_id}/dashboard-feed`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
       setFeedData(res.data);
+      globalFeedCache = res.data;
+      
       if (res.data?.experience_bundle) {
         setBundleData(res.data.experience_bundle);
+        globalBundleCache = res.data.experience_bundle;
       }
+      
+      lastFetchUserId = user.user_id;
+      lastFetchTime = Date.now();
+      
       setError('');
     } catch (err) {
       console.error('Failed to load dashboard feed:', err);
@@ -72,6 +73,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchFeed();
+    if (user?.user_id) {
+      getLibrary(user.user_id).then(items => {
+        setSavedItems(items.map(i => i.id));
+      }).catch(console.error);
+    }
   }, [user]);
 
   const handleFeedback = async (item, interactionType) => {
@@ -105,190 +111,109 @@ export default function Dashboard() {
     }
   };
 
-  // Top spotlight item
+  const handleSaveToggle = async (item) => {
+    if (!user?.user_id) return;
+    const isSaved = savedItems.some(id => String(id) === String(item.id));
+    const itemType = item.type?.toLowerCase();
+    try {
+      if (isSaved) {
+        await removeFromLibrary(user.user_id, String(item.id), itemType);
+        setSavedItems(prev => prev.filter(id => String(id) !== String(item.id)));
+        setToast({ message: "Removed from library", type: "save" });
+      } else {
+        await saveToLibrary(user.user_id, String(item.id), itemType);
+        setSavedItems(prev => [...prev, String(item.id)]);
+        setToast({ message: "Saved to library", type: "save" });
+      }
+      setTimeout(() => setToast(null), 3500);
+    } catch (err) {
+      console.error('Save error:', err);
+    }
+  };
+
   const topPicksSection = feedData?.sections?.find((s) => s.id === 'top-picks') || feedData?.sections?.[0];
   const heroItem = topPicksSection?.items?.[0];
 
-  // Filter sections by selected category tab
-  const visibleSections = feedData?.sections?.map((sec) => {
-    if (activeCategory === 'all') return sec;
-    return {
-      ...sec,
-      items: sec.items.filter((i) => i.type === activeCategory),
-    };
-  }).filter((sec) => sec.items.length > 0);
+  // We remove the hero item from the first row to avoid duplication
+  const processedSections = feedData?.sections?.map((sec, idx) => {
+    if (idx === 0 && heroItem && sec.items[0]?.id === heroItem.id) {
+      return { ...sec, items: sec.items.slice(1) };
+    }
+    return sec;
+  }).filter(sec => sec.items.length > 0);
 
   return (
-    <div className="relative min-h-screen w-full bg-[#050505] flex flex-col overflow-x-hidden">
-      <AuroraBackground />
+    <div className="relative min-h-screen w-full bg-[#090909] flex flex-col font-sans overflow-x-hidden">
+      
+      {/* Global Navigation */}
+      <MainNavbar />
 
-      {/* ─── Navbar ─── */}
-      <motion.nav
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease }}
-        className="relative z-20 flex items-center justify-between px-6 sm:px-12 py-6 bg-gradient-to-b from-[#050505] to-transparent"
-      >
-        <div className="flex items-center gap-6">
-          <Link to="/" className="text-[11px] uppercase tracking-[0.42em] text-white/40 font-medium hover:text-white/80 transition-colors">
-            CrossRec
-          </Link>
-          <span className="hidden sm:inline-block w-px h-3 bg-white/10" />
-          <span className="hidden sm:inline-block text-xs text-white/30 font-medium">
-            Personalized Story Universe
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/explore')}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/[0.12] text-purple-300 text-xs font-medium hover:bg-purple-500/20 hover:border-purple-500/50 shadow-[0_0_16px_rgba(168,85,247,0.15)] transition-all duration-300"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Explore Search
-          </button>
-
-          <button
-            onClick={() => navigate('/onboarding')}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white/40 text-xs font-medium hover:text-white/70 hover:border-white/20 transition-all duration-300"
-          >
-            Update Preferences
-          </button>
-
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white/40 text-xs font-medium hover:text-white/70 hover:border-white/20 transition-all duration-300"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Sign out
-          </button>
-        </div>
-      </motion.nav>
-
-      {/* ─── Main Feed Content ─── */}
-      <main className="relative z-10 flex-1 px-6 sm:px-12 pb-16 max-w-7xl mx-auto w-full">
-        {/* User Greeting Bar + Taste DNA */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease }}
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 pt-2"
-        >
-          <div>
-            <p className="text-white/35 text-sm font-light tracking-wide">
-              {getGreeting()},
-            </p>
-            <h1 className="text-3xl sm:text-4xl font-medium text-white tracking-tight">
-              {displayName}
-            </h1>
-          </div>
-
-          {/* Taste tags chips */}
-          {feedData?.user?.taste_tags?.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[10px] uppercase tracking-wider text-white/25 mr-1 font-semibold">Your Taste DNA:</span>
-              {feedData.user.taste_tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 rounded-full border border-purple-500/25 bg-purple-500/[0.09] text-purple-300/90 text-xs font-medium shadow-[0_0_12px_rgba(168,85,247,0.1)]"
-                >
-                  #{tag}
-                </span>
-              ))}
+      <div className="flex-1 max-w-[1400px] w-full mx-auto px-6 pt-24 pb-16 flex gap-8">
+        
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0">
+          
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-32 gap-4 text-white/30">
+              <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+              <p className="text-sm tracking-widest uppercase font-semibold">Generating Universe...</p>
             </div>
           )}
-        </motion.div>
 
-        {/* Category Tabs */}
-        {!loading && feedData && (
-          <div className="mb-8 border-b border-white/[0.06] pb-3">
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {CATEGORY_TABS.map((tab) => {
-                const isSel = activeCategory === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveCategory(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 ${
-                      isSel
-                        ? 'bg-white text-black font-semibold shadow-md'
-                        : 'text-white/40 hover:text-white/80 hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    <span>{tab.emoji}</span>
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
+          {error && !feedData && (
+            <div className="flex flex-col items-center justify-center py-32 gap-4 text-center">
+              <p className="text-red-400 text-sm">{error}</p>
+              <button
+                onClick={fetchFeed}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/10 text-white text-xs font-semibold uppercase tracking-wider hover:bg-white/20 transition-all"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Try Again
+              </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Loading state */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-24 gap-3 text-white/30">
-            <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-            <p className="text-sm font-medium tracking-wide">Building your personalized story universe...</p>
-          </div>
-        )}
+          {!loading && feedData && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+              {/* Hero Spotlight */}
+              {heroItem && (
+                <HeroCard
+                  item={heroItem}
+                  onCardClick={(item) => setSelectedItemModal(item)}
+                />
+              )}
 
-        {/* Error state */}
-        {error && !feedData && (
-          <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-            <p className="text-red-400 text-sm">{error}</p>
-            <button
-              onClick={fetchFeed}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-all"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Try Again
-            </button>
-          </div>
-        )}
+              {/* Complete the Universe */}
+              {bundleData && (
+                <ExperienceBundleRow
+                  bundleData={bundleData}
+                  onCardClick={(item) => setSelectedItemModal(item)}
+                  onSave={handleSaveToggle}
+                  savedItems={savedItems}
+                />
+              )}
 
-        {/* Feed layout */}
-        {!loading && feedData && (
-          <div>
-            {/* Hero Spotlight Banner */}
-            {heroItem && (
-              <HeroCard
-                item={heroItem}
-                onCardClick={(item) => setSelectedItemModal(item)}
-                onFeedback={handleFeedback}
-              />
-            )}
+              {/* Discovery Sections */}
+              {processedSections?.map((section, idx) => (
+                <ContentRow
+                  key={section.id || idx}
+                  title={section.title}
+                  subtitle={section.subtitle}
+                  items={section.items}
+                  delay={0.1 * idx}
+                  onFeedback={handleFeedback}
+                  onCardClick={(item) => setSelectedItemModal(item)}
+                  onSave={handleSaveToggle}
+                  savedItems={savedItems}
+                />
+              ))}
+            </motion.div>
+          )}
 
-            {/* 4-Domain Curated Experience Bundle */}
-            {bundleData && (
-              <ExperienceBundleRow
-                bundleData={bundleData}
-                onCardClick={(item) => setSelectedItemModal(item)}
-              />
-            )}
+        </main>
+      </div>
 
-            {/* Recommendation Rows */}
-            {visibleSections?.map((section, idx) => (
-              <ContentRow
-                key={section.id || idx}
-                title={section.title}
-                subtitle={section.subtitle}
-                items={section.items}
-                delay={0.1 * idx}
-                onFeedback={handleFeedback}
-                onCardClick={(item) => setSelectedItemModal(item)}
-              />
-            ))}
-
-            {(!visibleSections || visibleSections.length === 0) && (
-              <div className="text-center py-16 text-white/30 text-sm">
-                No recommendations match this filter. Try selecting 'All Feed'.
-              </div>
-            )}
-          </div>
-        )}
-      </main>
-
-      {/* Item Detail Quick-View Modal */}
+      {/* Modals & Overlays */}
       {selectedItemModal && (
         <ItemModal
           item={selectedItemModal}
@@ -297,7 +222,7 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Instant Feedback Toast Notification */}
+      {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -317,11 +242,6 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* Bottom Fade */}
-      <div
-        className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-10"
-        style={{ background: 'linear-gradient(to top, rgba(5,5,5,0.9) 0%, transparent 100%)' }}
-      />
     </div>
   );
 }

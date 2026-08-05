@@ -4,7 +4,7 @@ from models import Movie, Game, Book, Song, MovieKeyword, GameKeyword, BookKeywo
 from services.tmdb_service import search_movie_by_title, fetch_movie_keywords, parse_keywords as parse_movie_keywords
 from services.rawg_service import search_game_by_title, fetch_game_details, parse_game_keywords
 from services.book_service import search_book_by_title
-from services.lastfm_service import search_song_by_title, fetch_song_tags, fetch_artist_tags, parse_keywords as parse_song_keywords
+from services.spotify_service import search_song_by_title, fetch_song_tags, fetch_artist_tags, parse_keywords as parse_song_keywords
 from services.keyword_extractor import extract_keywords
 
 

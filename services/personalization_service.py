@@ -11,6 +11,7 @@ import numpy as np
 from collections import Counter
 from typing import List, Optional, Dict
 from datetime import datetime, timezone
+from sklearn.cluster import KMeans
 
 from models import (
     User, UserInteraction,
@@ -191,8 +192,12 @@ def record_feedback(db: Session, user_id: str, content_id: str, content_type: st
 
 # ── Taste Vector (Weighted Embedding Centroid) ────────────────────────────────
 
-def compute_taste_vector(db: Session, user_id: str) -> Optional[np.ndarray]:
-    """Builds the user's taste vector by averaging liked item embeddings, weighted by interaction type."""
+def compute_taste_vector(db: Session, user_id: str) -> Optional[dict]:
+    """
+    Builds the user's taste profile using multi-vector clustering for positive interactions,
+    and a distinct negative vector for dislikes.
+    Returns: {"positive_clusters": [np.ndarray], "negative_vector": np.ndarray}
+    """
     interactions = (
         db.query(UserInteraction)
         .filter(UserInteraction.user_id == user_id)
@@ -201,30 +206,64 @@ def compute_taste_vector(db: Session, user_id: str) -> Optional[np.ndarray]:
     if not interactions:
         return None
 
-    vectors = []
-    weights = []
+    pos_vectors = []
+    pos_weights = []
+    neg_vectors = []
+    neg_weights = []
 
     for inter in interactions:
         try:
             emb = get_or_create_embedding(db, inter.content_id, inter.content_type)
-            vectors.append(emb)
-            weights.append(inter.weight)
+            if inter.weight > 0:
+                pos_vectors.append(emb)
+                pos_weights.append(inter.weight)
+            else:
+                neg_vectors.append(emb)
+                neg_weights.append(abs(inter.weight))
         except (ValueError, Exception):
             continue
 
-    if not vectors:
+    if not pos_vectors:
         return None
 
-    vectors = np.array(vectors)
-    weights = np.array(weights)
+    pos_vectors = np.array(pos_vectors)
+    pos_weights = np.array(pos_weights)
+    
+    # 1. Multi-Vector Profiles via KMeans Clustering
+    # If a user has >= 4 positive items, cluster them into 2 distinct vectors to prevent "muddying"
+    n_clusters = 2 if len(pos_vectors) >= 4 else 1
+    
+    clusters = []
+    if n_clusters == 1:
+        # Just weighted sum
+        weighted_sum = np.sum(pos_vectors * pos_weights[:, np.newaxis], axis=0)
+        norm = np.linalg.norm(weighted_sum)
+        clusters.append(weighted_sum / norm if norm > 0 else weighted_sum)
+    else:
+        # Use KMeans
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=5)
+        labels = kmeans.fit_predict(pos_vectors)
+        
+        for i in range(n_clusters):
+            idx = np.where(labels == i)[0]
+            if len(idx) > 0:
+                weighted_sum = np.sum(pos_vectors[idx] * pos_weights[idx, np.newaxis], axis=0)
+                norm = np.linalg.norm(weighted_sum)
+                clusters.append(weighted_sum / norm if norm > 0 else weighted_sum)
 
-    # Weighted average: positive weights attract, negative weights repel
-    weighted_sum = np.sum(vectors * weights[:, np.newaxis], axis=0)
-    norm = np.linalg.norm(weighted_sum)
-    if norm > 0:
-        weighted_sum = weighted_sum / norm
+    # 2. Negative Space Vector
+    negative_vector = None
+    if neg_vectors:
+        neg_vectors = np.array(neg_vectors)
+        neg_weights = np.array(neg_weights)
+        weighted_neg = np.sum(neg_vectors * neg_weights[:, np.newaxis], axis=0)
+        norm = np.linalg.norm(weighted_neg)
+        negative_vector = weighted_neg / norm if norm > 0 else None
 
-    return weighted_sum
+    return {
+        "positive_clusters": clusters,
+        "negative_vector": negative_vector
+    }
 
 
 # ── Tag Bridge (Keyword Preference Dictionary) ───────────────────────────────
@@ -336,14 +375,14 @@ def get_personalized_recommendations(
     target_types: List[str] = None,
     limit: int = 10,
     alpha: float = 0.4,
-    pre_taste_vector: Optional[np.ndarray] = None,
+    pre_taste_vector: Optional[dict] = None,
     pre_tag_dict: Optional[dict] = None,
     pre_all_embeddings: Optional[List[ContentEmbedding]] = None,
     pre_interacted: Optional[set] = None
 ) -> Optional[dict]:
     """Generate personalized recommendations blending taste vector + tag bridge using vectorized NumPy matrix math."""
-    taste_vector = pre_taste_vector if pre_taste_vector is not None else compute_taste_vector(db, user_id)
-    if taste_vector is None:
+    taste_profile = pre_taste_vector if pre_taste_vector is not None else compute_taste_vector(db, user_id)
+    if taste_profile is None:
         return None
 
     if pre_tag_dict is not None:
@@ -352,7 +391,10 @@ def get_personalized_recommendations(
         tag_prefs = get_tag_preferences(db, user_id, top_n=20)
         tag_dict = {t["tag"]: t["score"] for t in tag_prefs}
 
-    filter_types = None if not target_types or "all" in target_types else target_types
+    if not target_types or "all" in target_types:
+        filter_types = ["movie", "game", "book", "song"]
+    else:
+        filter_types = target_types
 
     if pre_all_embeddings is not None:
         if filter_types:
@@ -380,15 +422,29 @@ def get_personalized_recommendations(
         return None
 
     # Vectorized similarity matrix calculation
+    if isinstance(taste_profile, np.ndarray):
+        pos_clusters = [taste_profile]
+        neg_vector = None
+    else:
+        pos_clusters = taste_profile.get("positive_clusters", [])
+        neg_vector = taste_profile.get("negative_vector", None)
+
     emb_matrix = np.array([c.embedding for c in candidates])
-    taste_norm = np.linalg.norm(taste_vector)
     cand_norms = np.linalg.norm(emb_matrix, axis=1)
-
     cand_norms[cand_norms == 0] = 1.0
-    if taste_norm == 0:
-        taste_norm = 1.0
 
-    vector_sims = np.dot(emb_matrix, taste_vector) / (cand_norms * taste_norm)
+    vector_sims = np.zeros(len(candidates)) - 1.0
+    for cluster in pos_clusters:
+        cluster_norm = np.linalg.norm(cluster)
+        if cluster_norm == 0: cluster_norm = 1.0
+        sims = np.dot(emb_matrix, cluster) / (cand_norms * cluster_norm)
+        vector_sims = np.maximum(vector_sims, sims)
+
+    if neg_vector is not None:
+        neg_norm = np.linalg.norm(neg_vector)
+        if neg_norm == 0: neg_norm = 1.0
+        neg_sims = np.dot(emb_matrix, neg_vector) / (cand_norms * neg_norm)
+        vector_sims = vector_sims - 0.5 * np.maximum(0, neg_sims)
 
     # Take top 60 candidate indices by vector similarity for tag scoring
     top_indices = np.argsort(vector_sims)[::-1][:60]
@@ -501,47 +557,77 @@ def get_experience_bundle(
     }
 
     for domain, role in DOMAIN_ROLES.items():
-        if domain == content_type:
-            # For same domain, find a different item
-            pass
-
         embeddings = (
             db.query(ContentEmbedding)
             .filter(ContentEmbedding.content_type == domain)
             .all()
         )
+        
+        candidates = [c for c in embeddings if not (c.content_id == content_id and c.content_type == content_type)]
+        if not candidates:
+            continue
 
+        cand_matrix = np.array([c.embedding for c in candidates])
+        
+        # Content similarity (vectorized)
+        dot = np.dot(cand_matrix, source_vector)
+        norm_s = np.linalg.norm(source_vector)
+        norm_c = np.linalg.norm(cand_matrix, axis=1)
+        norm_c[norm_c == 0] = 1.0
+        
+        sims = dot / (norm_s * norm_c) if norm_s else np.zeros(len(candidates))
+        
+        # Taste bonus (vectorized)
+        taste_bonus = np.zeros(len(candidates))
+        if taste_vector is not None:
+            if isinstance(taste_vector, np.ndarray):
+                pos_clusters = [taste_vector]
+                neg_vector = None
+            else:
+                pos_clusters = taste_vector.get("positive_clusters", [])
+                neg_vector = taste_vector.get("negative_vector", None)
+                
+            for cluster in pos_clusters:
+                t_norm = np.linalg.norm(cluster)
+                if t_norm > 0:
+                    t_dot = np.dot(cand_matrix, cluster)
+                    cluster_bonus = (t_dot / (t_norm * norm_c)) * 0.15
+                    taste_bonus = np.maximum(taste_bonus, cluster_bonus)
+                    
+            if neg_vector is not None:
+                n_norm = np.linalg.norm(neg_vector)
+                if n_norm > 0:
+                    n_dot = np.dot(cand_matrix, neg_vector)
+                    n_sim = n_dot / (n_norm * norm_c)
+                    taste_bonus = taste_bonus - 0.10 * np.maximum(0, n_sim)
+        
+        base_scores = sims + taste_bonus
+        
+        # Take top 30 candidates by base score to calculate tag bonus
+        top_indices = np.argsort(base_scores)[::-1][:30]
+        top_candidates = [candidates[idx] for idx in top_indices]
+        
+        # Batch fetch keywords for ONLY the top 30 candidates to avoid N+1 queries
+        cand_keys = [(c.content_id, c.content_type) for c in top_candidates]
+        from services.recommendation_service import batch_get_keywords
+        keywords_map = batch_get_keywords(db, cand_keys)
+        
         best_score = -1.0
         best_item = None
         best_shared_tags = []
 
-        for cand in embeddings:
-            if cand.content_id == content_id and cand.content_type == content_type:
-                continue
-
-            cand_arr = np.array(cand.embedding)
-
-            # Content similarity
-            dot = np.dot(source_vector, cand_arr)
-            norm_s = np.linalg.norm(source_vector)
-            norm_c = np.linalg.norm(cand_arr)
-            sim = float(dot / (norm_s * norm_c)) if norm_s and norm_c else 0.0
-
+        for idx, cand in enumerate(top_candidates):
+            orig_idx = top_indices[idx]
+            base_score = float(base_scores[orig_idx])
+            
             # Tag overlap bonus
-            cand_kws = get_keywords_str(db, cand.content_id, cand.content_type)
-            cand_kw_set = set(kw.strip().lower() for kw in cand_kws.split(", ") if len(kw.strip()) >= 3)
+            cand_kws_str = keywords_map.get((cand.content_type, cand.content_id), "")
+            cand_kw_set = set(kw.strip().lower() for kw in cand_kws_str.split(", ") if len(kw.strip()) >= 3)
             shared = source_kw_set & cand_kw_set
             tag_bonus = min(len(shared) * 0.05, 0.2)  # up to 0.2 bonus
-
-            # Taste bonus if user_id provided
-            taste_bonus = 0.0
-            if taste_vector is not None:
-                t_dot = np.dot(taste_vector, cand_arr)
-                t_norm = np.linalg.norm(taste_vector)
-                taste_bonus = float(t_dot / (t_norm * norm_c)) * 0.15 if t_norm and norm_c else 0.0
-
-            total = sim + tag_bonus + taste_bonus
-
+            
+            total = base_score + tag_bonus
+            
             if total > best_score:
                 best_score = total
                 best_item = cand

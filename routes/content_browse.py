@@ -49,7 +49,7 @@ def search_content(
                     "content_id": item.movie_id,
                     "content_type": "movie",
                     "title": item.movie_title,
-                    "cover_path": item.movie_poster_path,
+                    "cover_path": f"https://image.tmdb.org/t/p/w500{item.movie_poster_path}" if item.movie_poster_path and item.movie_poster_path.startswith("/") else item.movie_poster_path,
                 })
 
         elif ctype == "book":
@@ -156,7 +156,7 @@ def _resolve_item(db: Session, content_id: str, content_type: str) -> Optional[d
                 "content_id": m.movie_id,
                 "content_type": "movie",
                 "title": m.movie_title,
-                "cover_path": m.movie_poster_path,
+                "cover_path": f"https://image.tmdb.org/t/p/w500{m.movie_poster_path}" if m.movie_poster_path and m.movie_poster_path.startswith("/") else m.movie_poster_path,
             }
     elif content_type == "book":
         b = db.get(Book, content_id)

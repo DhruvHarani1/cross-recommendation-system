@@ -1,0 +1,1144 @@
+{
+  "b4a5feae-ee97-4d40-9a18-81a1878cdb12": {
+    "user": {
+      "user_id": "b4a5feae-ee97-4d40-9a18-81a1878cdb12",
+      "display_name": "Ayush Singh",
+      "taste_tags": [
+        "bollywood",
+        "hindi",
+        "indian",
+        "soundtrack",
+        "world"
+      ]
+    },
+    "sections": [
+      {
+        "id": "top-picks",
+        "title": "Top Picks for You",
+        "subtitle": "Personalized across all media",
+        "items": [
+          {
+            "id": "Pritam::Aahun Aahun",
+            "type": "song",
+            "title": "Aahun Aahun",
+            "cover_path": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/6c/c9/98/6cc9988b-b6ce-51e5-9396-fd11d65ad8a7/196871083010.jpg/600x600bb.jpg",
+            "match_score": 81.8,
+            "because_explanation": "Because you loved the indian & all themes in Tum Se Hi",
+            "matched_tags": [
+              "bollywood",
+              "hindi",
+              "all"
+            ],
+            "artist": "Pritam"
+          },
+          {
+            "id": "Arijit Singh::Tum Hi Ho",
+            "type": "song",
+            "title": "Tum Hi Ho",
+            "cover_path": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/bb/23/ee/bb23eeed-0c35-4f1d-2b11-485622777ae4/8902894353007_cover.jpg/600x600bb.jpg",
+            "match_score": 80.3,
+            "because_explanation": "Because you loved the indian & all themes in Tum Se Hi",
+            "matched_tags": [
+              "hindi",
+              "bollywood",
+              "soundtrack"
+            ],
+            "artist": "Arijit Singh"
+          },
+          {
+            "id": "Pritam::Mauja Hi Mauja",
+            "type": "song",
+            "title": "Mauja Hi Mauja",
+            "cover_path": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/3d/c7/43/3dc74387-e7f4-2342-397c-4cf2037c69a5/8902894623223_cover.jpg/600x600bb.jpg",
+            "match_score": 79.9,
+            "because_explanation": "Because you loved the indian & all themes in Tum Se Hi",
+            "matched_tags": [
+              "bollywood",
+              "hindi",
+              "all"
+            ],
+            "artist": "Pritam"
+          }
+        ]
+      },
+      {
+        "id": "tag-bollywood",
+        "title": "Because you love bollywood",
+        "subtitle": "Curated around the 'bollywood' vibe",
+        "items": [
+          {
+            "id": "Pritam::Aahun Aahun",
+            "type": "song",
+            "title": "Aahun Aahun",
+            "cover_path": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/6c/c9/98/6cc9988b-b6ce-51e5-9396-fd11d65ad8a7/196871083010.jpg/600x600bb.jpg",
+            "match_score": 90.9,
+            "because_explanation": "Because you loved the indian & all themes in Tum Se Hi",
+            "matched_tags": [
+              "bollywood",
+              "hindi",
+              "all"
+            ],
+            "artist": "Pritam"
+          },
+          {
+            "id": "Arijit Singh::Tum Hi Ho",
+            "type": "song",
+            "title": "Tum Hi Ho",
+            "cover_path": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/bb/23/ee/bb23eeed-0c35-4f1d-2b11-485622777ae4/8902894353007_cover.jpg/600x600bb.jpg",
+            "match_score": 90.2,
+            "because_explanation": "Because you loved the indian & all themes in Tum Se Hi",
+            "matched_tags": [
+              "hindi",
+              "bollywood",
+              "soundtrack"
+            ],
+            "artist": "Arijit Singh"
+          }
+        ]
+      },
+      {
+        "id": "tag-hindi",
+        "title": "Because you love hindi",
+        "subtitle": "Curated around the 'hindi' vibe",
+        "items": [
+          {
+            "id": "Pritam::Aahun Aahun",
+            "type": "song",
+            "title": "Aahun Aahun",
+            "cover_path": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/6c/c9/98/6cc9988b-b6ce-51e5-9396-fd11d65ad8a7/196871083010.jpg/600x600bb.jpg",
+            "match_score": 90.9,
+            "because_explanation": "Because you loved the indian & all themes in Tum Se Hi",
+            "matched_tags": [
+              "bollywood",
+              "hindi",
+              "all"
+            ],
+            "artist": "Pritam"
+          },
+          {
+            "id": "Arijit Singh::Tum Hi Ho",
+            "type": "song",
+            "title": "Tum Hi Ho",
+            "cover_path": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/bb/23/ee/bb23eeed-0c35-4f1d-2b11-485622777ae4/8902894353007_cover.jpg/600x600bb.jpg",
+            "match_score": 90.2,
+            "because_explanation": "Because you loved the indian & all themes in Tum Se Hi",
+            "matched_tags": [
+              "hindi",
+              "bollywood",
+              "soundtrack"
+            ],
+            "artist": "Arijit Singh"
+          }
+        ]
+      },
+      {
+        "id": "type-movie",
+        "title": "Movies for You",
+        "subtitle": "Your personalized movie picks",
+        "items": [
+          {
+            "id": "1534239",
+            "type": "movie",
+            "title": "Ayr\u0131l\u0131q imi\u015f",
+            "cover_path": "https://image.tmdb.org/t/p/w500/edpA44qAXWcyptegX1XdDa8HpT7.jpg",
+            "match_score": 22.0,
+            "because_explanation": "Matches your taste profile across movie themes",
+            "matched_tags": []
+          },
+          {
+            "id": "687259",
+            "type": "movie",
+            "title": "\u955c\u82b1\u98ce\u6708\u4e09\u4e4b\u87ba\u5973\u6311\u60c5",
+            "cover_path": "https://image.tmdb.org/t/p/w500/m4ALMhsuqOOUkkABvgQWfrgoL8y.jpg",
+            "match_score": 21.7,
+            "because_explanation": "Matches your taste profile across movie themes",
+            "matched_tags": []
+          },
+          {
+            "id": "19404",
+            "type": "movie",
+            "title": "\u0926\u093f\u0932\u0935\u093e\u0932\u0947 \u0926\u0941\u0932\u094d\u0939\u0928\u093f\u092f\u093e \u0932\u0947 \u091c\u093e\u092f\u0947\u0902\u0917\u0947",
+            "cover_path": "https://image.tmdb.org/t/p/w500/tFbfCkS7q6g96wVoAu8kyr93iPm.jpg",
+            "match_score": 21.3,
+            "because_explanation": "Matches your taste profile across movie themes",
+            "matched_tags": []
+          },
+          {
+            "id": "161396",
+            "type": "movie",
+            "title": "\u0938\u0928\u092e \u092c\u0947\u0935\u092b\u093c\u093e",
+            "cover_path": "https://image.tmdb.org/t/p/w500/mnou9y9BgH7JVmsozvuqGxVPULc.jpg",
+            "match_score": 20.9,
+            "because_explanation": "Matches your taste profile across movie themes",
+            "matched_tags": []
+          },
+          {
+            "id": "1582770",
+            "type": "movie",
+            "title": "\u0927\u0941\u0930\u0902\u0927\u0930: \u0926 \u0930\u093f\u0935\u0947\u0902\u091c",
+            "cover_path": "https://image.tmdb.org/t/p/w500/ptTwQES14pr5c3aZvJg56YlYgb1.jpg",
+            "match_score": 20.8,
+            "because_explanation": "Because you loved the india themes in Dum Maro Dum",
+            "matched_tags": [
+              "india"
+            ]
+          },
+          {
+            "id": "1408170",
+            "type": "movie",
+            "title": "\u0c32\u0c46\u0c28\u0c3f\u0c28\u0c4d",
+            "cover_path": "https://image.tmdb.org/t/p/w500/rAHQviBq8Fxi20hNtHPGLnr4L0f.jpg",
+            "match_score": 20.5,
+            "because_explanation": "Matches your taste profile across movie themes",
+            "matched_tags": []
+          },
+          {
+            "id": "716273",
+            "type": "movie",
+            "title": "\ud55c\uc785\ub9cc",
+            "cover_path": "https://image.tmdb.org/t/p/w500/fBfbWJiG5CUGr1gjiaVPA6l94RW.jpg",
+            "match_score": 20.3,
+            "because_explanation": "Matches your taste profile across movie themes",
+            "matched_tags": []
+          },
+          {
+            "id": "27",
+            "type": "movie",
+            "title": "9 Songs",
+            "cover_path": "https://image.tmdb.org/t/p/w500/91O7z0vo7MiNWd5xD2BoivwbQsb.jpg",
+            "match_score": 20.3,
+            "because_explanation": "Matches your taste profile across movie themes",
+            "matched_tags": [
+              "rock"
+            ]
+          },
+          {
+            "id": "278986",
+            "type": "movie",
+            "title": "\u0997\u09be\u0999\u09cd\u0997\u09b0",
+            "cover_path": "https://image.tmdb.org/t/p/w500/jf3Wa4ZIpHDhDkjUQ0PaUW7gyJM.jpg",
+            "match_score": 20.3,
+            "because_explanation": "Matches your taste profile across movie themes",
+            "matched_tags": []
+          },
+          {
+            "id": "1479832",
+            "type": "movie",
+            "title": "\u0b9f\u0bbf \u0b9a\u0bbf",
+            "cover_path": "https://image.tmdb.org/t/p/w500/7IqDtlkUNDnnR3wsXScEGSDV4RM.jpg",
+            "match_score": 20.0,
+            "because_explanation": "Matches your taste profile across movie themes",
+            "matched_tags": []
+          }
+        ]
+      },
+      {
+        "id": "type-book",
+        "title": "Books for You",
+        "subtitle": "Your personalized book picks",
+        "items": [
+          {
+            "id": "t6PyjNTZ8-AC",
+            "type": "book",
+            "title": "Law and Order in Upper India",
+            "cover_path": "https://books.google.com/books/content?id=t6PyjNTZ8-AC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+            "match_score": 17.4,
+            "because_explanation": "Because you loved the india themes in Dum Maro Dum",
+            "matched_tags": [
+              "india"
+            ]
+          },
+          {
+            "id": "xXk0j_jgifUC",
+            "type": "book",
+            "title": "The Space Race",
+            "cover_path": "https://books.google.com/books/content?id=xXk0j_jgifUC&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 14.5,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          },
+          {
+            "id": "CPOtzQEACAAJ",
+            "type": "book",
+            "title": "Songlands",
+            "cover_path": "https://books.google.com/books/content?id=CPOtzQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 14.4,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          },
+          {
+            "id": "uefwmdROKTAC",
+            "type": "book",
+            "title": "Science Fact and Science Fiction",
+            "cover_path": "https://books.google.com/books/content?id=uefwmdROKTAC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+            "match_score": 14.2,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          },
+          {
+            "id": "C3CdqCZp8KQC",
+            "type": "book",
+            "title": "A Theory of Adaptation",
+            "cover_path": "https://books.google.com/books/content?id=C3CdqCZp8KQC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+            "match_score": 14.1,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          },
+          {
+            "id": "o8sfAQAAIAAJ",
+            "type": "book",
+            "title": "Tactical Biopolitics",
+            "cover_path": "https://books.google.com/books/content?id=o8sfAQAAIAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 13.9,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          },
+          {
+            "id": "bW3KAQAAQBAJ",
+            "type": "book",
+            "title": "Jingle Bell Romance",
+            "cover_path": "https://books.google.com/books/content?id=bW3KAQAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+            "match_score": 13.7,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          },
+          {
+            "id": "w59BAAAACAAJ",
+            "type": "book",
+            "title": "Skeleton Key",
+            "cover_path": "https://books.google.com/books/content?id=w59BAAAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 13.7,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          },
+          {
+            "id": "xaeixAEACAAJ",
+            "type": "book",
+            "title": "Ashes",
+            "cover_path": "https://books.google.com/books/content?id=xaeixAEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 13.7,
+            "because_explanation": "Because you loved the dystopian themes in Remember Me",
+            "matched_tags": []
+          },
+          {
+            "id": "nDgwZdT2EK8C",
+            "type": "book",
+            "title": "Bakkhai",
+            "cover_path": "https://books.google.com/books/content?id=nDgwZdT2EK8C&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+            "match_score": 13.4,
+            "because_explanation": "Because you loved the drama themes in Remember Me",
+            "matched_tags": []
+          }
+        ]
+      },
+      {
+        "id": "type-game",
+        "title": "Games for You",
+        "subtitle": "Your personalized game picks",
+        "items": [
+          {
+            "id": "16856",
+            "type": "game",
+            "title": "AudioSurf",
+            "cover_path": "https://media.rawg.io/media/screenshots/0f5/0f585fa72f534f62f9e5da051179f5de.jpg",
+            "match_score": 40.6,
+            "because_explanation": "Because you loved the full controller support & great soundtrack themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "steam achievements",
+              "great soundtrack"
+            ]
+          },
+          {
+            "id": "2354",
+            "type": "game",
+            "title": "Mirror's Edge Catalyst",
+            "cover_path": "https://media.rawg.io/media/games/257/257c497aa4060f4a697ccbf5e99ec230.jpg",
+            "match_score": 40.3,
+            "because_explanation": "Because you loved the full controller support & atmospheric themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "steam achievements",
+              "atmospheric"
+            ]
+          },
+          {
+            "id": "41494",
+            "type": "game",
+            "title": "Cyberpunk 2077",
+            "cover_path": "https://media.rawg.io/media/games/26d/26d4437715bee60138dab4a7c8c59c92.jpg",
+            "match_score": 39.8,
+            "because_explanation": "Because you loved the story rich & atmospheric themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "atmospheric",
+              "great soundtrack"
+            ]
+          },
+          {
+            "id": "3612",
+            "type": "game",
+            "title": "Hotline Miami",
+            "cover_path": "https://media.rawg.io/media/games/9fa/9fa63622543e5d4f6d99aa9d73b043de.jpg",
+            "match_score": 39.5,
+            "because_explanation": "Because you loved the atmospheric & steam-trading-cards themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "steam achievements",
+              "atmospheric"
+            ]
+          },
+          {
+            "id": "53341",
+            "type": "game",
+            "title": "Jet Set Radio",
+            "cover_path": "https://media.rawg.io/media/games/fd7/fd794a9f0ffe816038d981b3acc3eec9.jpg",
+            "match_score": 39.4,
+            "because_explanation": "Because you loved the full controller support & atmospheric themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "atmospheric",
+              "great soundtrack"
+            ]
+          },
+          {
+            "id": "14016",
+            "type": "game",
+            "title": "Tropico 4",
+            "cover_path": "https://media.rawg.io/media/games/d1e/d1e70ce3762efcfc170c6bd067d7e9e3.jpg",
+            "match_score": 38.5,
+            "because_explanation": "Because you loved the atmospheric & steam-trading-cards themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "steam achievements",
+              "atmospheric"
+            ]
+          },
+          {
+            "id": "3368",
+            "type": "game",
+            "title": "Titan Souls",
+            "cover_path": "https://media.rawg.io/media/screenshots/2fc/2fc6994425146f9dba3133400b414e29.jpg",
+            "match_score": 38.0,
+            "because_explanation": "Because you loved the fantasy & full controller support themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "steam achievements",
+              "atmospheric"
+            ]
+          },
+          {
+            "id": "10754",
+            "type": "game",
+            "title": "BioShock Remastered",
+            "cover_path": "https://media.rawg.io/media/games/be0/be01c3d7d8795a45615da139322ca080.jpg",
+            "match_score": 37.8,
+            "because_explanation": "Because you loved the story rich & full controller support themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "steam achievements",
+              "atmospheric"
+            ]
+          },
+          {
+            "id": "3017",
+            "type": "game",
+            "title": "Just Cause 3",
+            "cover_path": "https://media.rawg.io/media/games/5bb/5bb55ccb8205aadbb6a144cf6d8963f1.jpg",
+            "match_score": 37.8,
+            "because_explanation": "Because you loved the full controller support & atmospheric themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "steam achievements",
+              "atmospheric"
+            ]
+          },
+          {
+            "id": "14334",
+            "type": "game",
+            "title": "Satellite Reign",
+            "cover_path": "https://media.rawg.io/media/games/8df/8df64136042eb6e2ed4fa910a6ad96ac.jpg",
+            "match_score": 37.5,
+            "because_explanation": "Because you loved the atmospheric & sci-fi themes in Remember Me",
+            "matched_tags": [
+              "singleplayer",
+              "steam achievements",
+              "atmospheric"
+            ]
+          }
+        ]
+      }
+    ],
+    "experience_bundle": {
+      "source_item": {
+        "id": "Pritam::Aahun Aahun",
+        "type": "song",
+        "title": "Aahun Aahun",
+        "cover_path": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/6c/c9/98/6cc9988b-b6ce-51e5-9396-fd11d65ad8a7/196871083010.jpg/600x600bb.jpg"
+      },
+      "experience_bundle": {
+        "movie": {
+          "id": "1534239",
+          "title": "Ayr\u0131l\u0131q imi\u015f",
+          "cover_path": "https://image.tmdb.org/t/p/w500/edpA44qAXWcyptegX1XdDa8HpT7.jpg",
+          "match_score": 47.5,
+          "reason": "The next movie to watch \u2014 similar mood and themes to Aahun Aahun."
+        },
+        "game": {
+          "id": "58325",
+          "title": "Beat Saber",
+          "cover_path": "https://media.rawg.io/media/screenshots/90f/90f61894908915eff8455e7b43d466a2.jpg",
+          "match_score": 41.7,
+          "reason": "The game to live in that world \u2014 similar mood and themes to Aahun Aahun."
+        },
+        "book": {
+          "id": "7WmIQgAACAAJ",
+          "title": "The Last Vampire",
+          "cover_path": "https://books.google.com/books/content?id=7WmIQgAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+          "match_score": 34.6,
+          "reason": "The book to read deeper \u2014 similar mood and themes to Aahun Aahun."
+        },
+        "song": {
+          "id": "Pritam::Tum Se Hi",
+          "title": "Tum Se Hi",
+          "cover_path": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/3d/c7/43/3dc74387-e7f4-2342-397c-4cf2037c69a5/8902894623223_cover.jpg/600x600bb.jpg",
+          "match_score": 114.0,
+          "reason": "The soundtrack to recapture the mood \u2014 shares the indian & pritam vibe of Aahun Aahun.",
+          "artist": "Pritam"
+        }
+      }
+    }
+  },
+  "56bf5680-fba2-4ed9-973c-ea9c75b4e48f": {
+    "user": {
+      "user_id": "56bf5680-fba2-4ed9-973c-ea9c75b4e48f",
+      "display_name": "ayush",
+      "taste_tags": [
+        "mystery",
+        "comedy",
+        "based on novel or book",
+        "action",
+        "simulation"
+      ]
+    },
+    "sections": [
+      {
+        "id": "top-picks",
+        "title": "Top Picks for You",
+        "subtitle": "Personalized across all media",
+        "items": [
+          {
+            "id": "9509",
+            "type": "movie",
+            "title": "Man on Fire",
+            "cover_path": "https://image.tmdb.org/t/p/w500/grCGLCcTHv9TChibzOwzUpykcjB.jpg",
+            "match_score": 54.1,
+            "because_explanation": "Because you loved the mexico themes in Borderline",
+            "matched_tags": [
+              "mexico",
+              "mexico",
+              "based on novel or book"
+            ]
+          },
+          {
+            "id": "1078605",
+            "type": "movie",
+            "title": "Weapons",
+            "cover_path": "https://image.tmdb.org/t/p/w500/cpf7vsRZ0MYRQcnLWteD5jK9ymT.jpg",
+            "match_score": 51.7,
+            "because_explanation": "Because you loved the usa themes in Borderline",
+            "matched_tags": [
+              "usa",
+              "mystery"
+            ]
+          },
+          {
+            "id": "510",
+            "type": "movie",
+            "title": "One Flew Over the Cuckoo's Nest",
+            "cover_path": "https://image.tmdb.org/t/p/w500/kjWsMh72V6d8KRLV4EOoSJLT1H7.jpg",
+            "match_score": 49.7,
+            "because_explanation": "Because you loved the usa themes in Borderline",
+            "matched_tags": [
+              "based on novel or book",
+              "usa"
+            ]
+          },
+          {
+            "id": "122",
+            "type": "game",
+            "title": "This is the Police",
+            "cover_path": "https://media.rawg.io/media/games/6cc/6cc68fa183b905ac9d85efb9797776f6.jpg",
+            "match_score": 45.6,
+            "because_explanation": "Because you loved the comedy themes in The Mocking Dead Volume 1",
+            "matched_tags": [
+              "comedy"
+            ]
+          },
+          {
+            "id": "14422",
+            "type": "game",
+            "title": "Condemned: Criminal Origins",
+            "cover_path": "https://media.rawg.io/media/games/98d/98deaf99f06aa3d7e54e1fa69e4a9060.jpg",
+            "match_score": 45.3,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "mystery"
+            ]
+          },
+          {
+            "id": "58385",
+            "type": "game",
+            "title": "Rage 2",
+            "cover_path": "https://media.rawg.io/media/games/662/66261db966238da20c306c4b78ae4603.jpg",
+            "match_score": 42.6,
+            "because_explanation": "Matches your taste profile across game themes",
+            "matched_tags": [
+              "sci-fi"
+            ]
+          },
+          {
+            "id": "S9RJEAAAQBAJ",
+            "type": "book",
+            "title": "S9RJEAAAQBAJ",
+            "cover_path": null,
+            "match_score": 34.7,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          }
+        ]
+      },
+      {
+        "id": "tag-mystery",
+        "title": "Because you love mystery",
+        "subtitle": "Curated around the 'mystery' vibe",
+        "items": [
+          {
+            "id": "9509",
+            "type": "movie",
+            "title": "Man on Fire",
+            "cover_path": "https://image.tmdb.org/t/p/w500/grCGLCcTHv9TChibzOwzUpykcjB.jpg",
+            "match_score": 51.7,
+            "because_explanation": "Because you loved the mexico themes in Borderline",
+            "matched_tags": [
+              "mexico",
+              "mexico",
+              "based on novel or book"
+            ]
+          },
+          {
+            "id": "1078605",
+            "type": "movie",
+            "title": "Weapons",
+            "cover_path": "https://image.tmdb.org/t/p/w500/cpf7vsRZ0MYRQcnLWteD5jK9ymT.jpg",
+            "match_score": 46.5,
+            "because_explanation": "Because you loved the usa themes in Borderline",
+            "matched_tags": [
+              "usa",
+              "mystery"
+            ]
+          },
+          {
+            "id": "14422",
+            "type": "game",
+            "title": "Condemned: Criminal Origins",
+            "cover_path": "https://media.rawg.io/media/games/98d/98deaf99f06aa3d7e54e1fa69e4a9060.jpg",
+            "match_score": 36.4,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "mystery"
+            ]
+          },
+          {
+            "id": "122",
+            "type": "game",
+            "title": "This is the Police",
+            "cover_path": "https://media.rawg.io/media/games/6cc/6cc68fa183b905ac9d85efb9797776f6.jpg",
+            "match_score": 34.3,
+            "because_explanation": "Because you loved the comedy themes in The Mocking Dead Volume 1",
+            "matched_tags": [
+              "comedy"
+            ]
+          },
+          {
+            "id": "S9RJEAAAQBAJ",
+            "type": "book",
+            "title": "S9RJEAAAQBAJ",
+            "cover_path": null,
+            "match_score": 17.3,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          }
+        ]
+      },
+      {
+        "id": "tag-comedy",
+        "title": "Because you love comedy",
+        "subtitle": "Curated around the 'comedy' vibe",
+        "items": [
+          {
+            "id": "9509",
+            "type": "movie",
+            "title": "Man on Fire",
+            "cover_path": "https://image.tmdb.org/t/p/w500/grCGLCcTHv9TChibzOwzUpykcjB.jpg",
+            "match_score": 51.7,
+            "because_explanation": "Because you loved the mexico themes in Borderline",
+            "matched_tags": [
+              "mexico",
+              "mexico",
+              "based on novel or book"
+            ]
+          },
+          {
+            "id": "1078605",
+            "type": "movie",
+            "title": "Weapons",
+            "cover_path": "https://image.tmdb.org/t/p/w500/cpf7vsRZ0MYRQcnLWteD5jK9ymT.jpg",
+            "match_score": 46.5,
+            "because_explanation": "Because you loved the usa themes in Borderline",
+            "matched_tags": [
+              "usa",
+              "mystery"
+            ]
+          },
+          {
+            "id": "14422",
+            "type": "game",
+            "title": "Condemned: Criminal Origins",
+            "cover_path": "https://media.rawg.io/media/games/98d/98deaf99f06aa3d7e54e1fa69e4a9060.jpg",
+            "match_score": 36.4,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "mystery"
+            ]
+          },
+          {
+            "id": "122",
+            "type": "game",
+            "title": "This is the Police",
+            "cover_path": "https://media.rawg.io/media/games/6cc/6cc68fa183b905ac9d85efb9797776f6.jpg",
+            "match_score": 34.3,
+            "because_explanation": "Because you loved the comedy themes in The Mocking Dead Volume 1",
+            "matched_tags": [
+              "comedy"
+            ]
+          },
+          {
+            "id": "S9RJEAAAQBAJ",
+            "type": "book",
+            "title": "S9RJEAAAQBAJ",
+            "cover_path": null,
+            "match_score": 17.3,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          }
+        ]
+      },
+      {
+        "id": "type-movie",
+        "title": "Movies for You",
+        "subtitle": "Your personalized movie picks",
+        "items": [
+          {
+            "id": "9509",
+            "type": "movie",
+            "title": "Man on Fire",
+            "cover_path": "https://image.tmdb.org/t/p/w500/grCGLCcTHv9TChibzOwzUpykcjB.jpg",
+            "match_score": 54.8,
+            "because_explanation": "Because you loved the mexico themes in Borderline",
+            "matched_tags": [
+              "mexico",
+              "mexico",
+              "based on novel or book"
+            ]
+          },
+          {
+            "id": "1078605",
+            "type": "movie",
+            "title": "Weapons",
+            "cover_path": "https://image.tmdb.org/t/p/w500/cpf7vsRZ0MYRQcnLWteD5jK9ymT.jpg",
+            "match_score": 53.4,
+            "because_explanation": "Because you loved the usa themes in Borderline",
+            "matched_tags": [
+              "usa",
+              "mystery"
+            ]
+          },
+          {
+            "id": "510",
+            "type": "movie",
+            "title": "One Flew Over the Cuckoo's Nest",
+            "cover_path": "https://image.tmdb.org/t/p/w500/kjWsMh72V6d8KRLV4EOoSJLT1H7.jpg",
+            "match_score": 52.1,
+            "because_explanation": "Because you loved the usa themes in Borderline",
+            "matched_tags": [
+              "based on novel or book",
+              "usa"
+            ]
+          },
+          {
+            "id": "345",
+            "type": "movie",
+            "title": "Eyes Wide Shut",
+            "cover_path": "https://image.tmdb.org/t/p/w500/knEIz1eNGl5MQDbrEAVWA7iRqF9.jpg",
+            "match_score": 49.8,
+            "because_explanation": "Because you loved the conspiracy themes in Borderline",
+            "matched_tags": [
+              "based on novel or book",
+              "conspiracy"
+            ]
+          },
+          {
+            "id": "1359",
+            "type": "movie",
+            "title": "American Psycho",
+            "cover_path": "https://image.tmdb.org/t/p/w500/9uGHEgsiUXjCNq8wdq4r49YL8A1.jpg",
+            "match_score": 49.3,
+            "because_explanation": "Because you loved the based on novel or book & psychological thriller themes in The Housemaid",
+            "matched_tags": [
+              "based on novel or book"
+            ]
+          },
+          {
+            "id": "951491",
+            "type": "movie",
+            "title": "Saw X",
+            "cover_path": "https://image.tmdb.org/t/p/w500/u7Lp1Hi8aBS73jv4KRMIv5aK4ax.jpg",
+            "match_score": 47.8,
+            "because_explanation": "Because you loved the mexico themes in Borderline",
+            "matched_tags": [
+              "mexico",
+              "mexico"
+            ]
+          },
+          {
+            "id": "694",
+            "type": "movie",
+            "title": "The Shining",
+            "cover_path": "https://image.tmdb.org/t/p/w500/uAR0AWqhQL1hQa69UDEbb2rE5Wx.jpg",
+            "match_score": 46.7,
+            "because_explanation": "Because you loved the based on novel or book & psychological thriller themes in The Housemaid",
+            "matched_tags": [
+              "based on novel or book"
+            ]
+          },
+          {
+            "id": "78",
+            "type": "movie",
+            "title": "Blade Runner",
+            "cover_path": "https://image.tmdb.org/t/p/w500/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg",
+            "match_score": 46.5,
+            "because_explanation": "Because you loved the based on novel or book & dystopia themes in Fight Club",
+            "matched_tags": [
+              "based on novel or book"
+            ]
+          },
+          {
+            "id": "50620",
+            "type": "movie",
+            "title": "The Twilight Saga: Breaking Dawn - Part 2",
+            "cover_path": "https://image.tmdb.org/t/p/w500/7IGdPaKujv0BjI0Zd0m0a4CzEjJ.jpg",
+            "match_score": 46.5,
+            "because_explanation": "Because you loved the based on novel or book themes in The Housemaid",
+            "matched_tags": [
+              "based on novel or book"
+            ]
+          },
+          {
+            "id": "14836",
+            "type": "movie",
+            "title": "Coraline",
+            "cover_path": "https://image.tmdb.org/t/p/w500/4jeFXQYytChdZYE9JYO7Un87IlW.jpg",
+            "match_score": 45.8,
+            "because_explanation": "Because you loved the based on novel or book themes in The Housemaid",
+            "matched_tags": [
+              "based on novel or book"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "type-book",
+        "title": "Books for You",
+        "subtitle": "Your personalized book picks",
+        "items": [
+          {
+            "id": "OfBppwAACAAJ",
+            "type": "book",
+            "title": "Iron House",
+            "cover_path": "https://books.google.com/books/content?id=OfBppwAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 45.1,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "mystery"
+            ]
+          },
+          {
+            "id": "mh4X2GrTxzAC",
+            "type": "book",
+            "title": "The Teen Model Mystery",
+            "cover_path": "https://books.google.com/books/content?id=mh4X2GrTxzAC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+            "match_score": 45.1,
+            "because_explanation": "Because you loved the mystery & secret themes in The Housemaid",
+            "matched_tags": [
+              "mystery"
+            ]
+          },
+          {
+            "id": "hFA6NgAACAAJ",
+            "type": "book",
+            "title": "Angels in the Gloom",
+            "cover_path": "https://books.google.com/books/content?id=hFA6NgAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 43.3,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "mystery"
+            ]
+          },
+          {
+            "id": "mA9dAAAAcAAJ",
+            "type": "book",
+            "title": "Great Tales and Poems",
+            "cover_path": "https://books.google.com/books/content?id=mA9dAAAAcAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 42.9,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "mystery"
+            ]
+          },
+          {
+            "id": "TuEtzwEACAAJ",
+            "type": "book",
+            "title": "Intruders",
+            "cover_path": "https://books.google.com/books/content?id=TuEtzwEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 40.6,
+            "because_explanation": "Because you loved the conspiracy themes in Borderline",
+            "matched_tags": [
+              "conspiracy",
+              "adventure"
+            ]
+          },
+          {
+            "id": "S9RJEAAAQBAJ",
+            "type": "book",
+            "title": "Bloodmarked",
+            "cover_path": "https://books.google.com/books/content?id=S9RJEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+            "match_score": 40.4,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          },
+          {
+            "id": "n6YcAQAAIAAJ",
+            "type": "book",
+            "title": "Death's Dark Abyss",
+            "cover_path": "https://books.google.com/books/content?id=n6YcAQAAIAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 40.4,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": [
+              "drama"
+            ]
+          },
+          {
+            "id": "DEtx0AEACAAJ",
+            "type": "book",
+            "title": "The Deep Enders: Deadline",
+            "cover_path": "https://books.google.com/books/content?id=DEtx0AEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 40.0,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "mystery"
+            ]
+          },
+          {
+            "id": "0JIMAAAAYAAJ",
+            "type": "book",
+            "title": "Our Gang",
+            "cover_path": "https://books.google.com/books/content?id=0JIMAAAAYAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+            "match_score": 38.8,
+            "because_explanation": "Because you loved the immigration themes in Borderline",
+            "matched_tags": [
+              "immigration"
+            ]
+          },
+          {
+            "id": "zy0ikHa-XzkC",
+            "type": "book",
+            "title": "A Dead Calmness",
+            "cover_path": "https://books.google.com/books/content?id=zy0ikHa-XzkC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+            "match_score": 37.9,
+            "because_explanation": "Matches your taste profile across book themes",
+            "matched_tags": []
+          }
+        ]
+      },
+      {
+        "id": "type-game",
+        "title": "Games for You",
+        "subtitle": "Your personalized game picks",
+        "items": [
+          {
+            "id": "29215",
+            "type": "game",
+            "title": "Life is Strange: Before The Storm",
+            "cover_path": "https://media.rawg.io/media/games/214/2140885d34e3a3398b45036e5d870971.jpg",
+            "match_score": 54.5,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "rpg",
+              "mystery",
+              "drama"
+            ]
+          },
+          {
+            "id": "4000",
+            "type": "game",
+            "title": "Remember Me",
+            "cover_path": "https://media.rawg.io/media/games/569/569ea25d2b56bd05c7fa309ddabe81ff.jpg",
+            "match_score": 54.4,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "sci-fi",
+              "mystery",
+              "drama"
+            ]
+          },
+          {
+            "id": "616765",
+            "type": "game",
+            "title": "Marvel's Guardians of the Galaxy",
+            "cover_path": "https://media.rawg.io/media/games/708/7080e6c87e0825cb02888bf3c44b3889.jpg",
+            "match_score": 52.3,
+            "because_explanation": "Because you loved the superhero themes in Spider-Man: Brand New Day",
+            "matched_tags": [
+              "rpg",
+              "sci-fi",
+              "comedy"
+            ]
+          },
+          {
+            "id": "52330",
+            "type": "game",
+            "title": "The Council",
+            "cover_path": "https://media.rawg.io/media/games/123/123e035701a975f5d96c233f4048eed2.jpg",
+            "match_score": 50.7,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "rpg",
+              "mystery"
+            ]
+          },
+          {
+            "id": "3427",
+            "type": "game",
+            "title": "Murdered: Soul Suspect",
+            "cover_path": "https://media.rawg.io/media/games/54a/54a3e4c617217848dc43c4de9989fe37.jpg",
+            "match_score": 50.5,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "rpg",
+              "mystery"
+            ]
+          },
+          {
+            "id": "2296",
+            "type": "game",
+            "title": "Fahrenheit: Indigo Prophecy Remastered",
+            "cover_path": "https://media.rawg.io/media/games/b51/b51c46cccb277e6451e2a67e4213a820.jpg",
+            "match_score": 49.4,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "rpg",
+              "mystery"
+            ]
+          },
+          {
+            "id": "122",
+            "type": "game",
+            "title": "This is the Police",
+            "cover_path": "https://media.rawg.io/media/games/6cc/6cc68fa183b905ac9d85efb9797776f6.jpg",
+            "match_score": 49.4,
+            "because_explanation": "Because you loved the comedy themes in The Mocking Dead Volume 1",
+            "matched_tags": [
+              "comedy"
+            ]
+          },
+          {
+            "id": "17885",
+            "type": "game",
+            "title": "Overlord",
+            "cover_path": "https://media.rawg.io/media/games/d1c/d1cd8a226cb224357c1f59605577cbf2.jpg",
+            "match_score": 49.0,
+            "because_explanation": "Because you loved the comedy themes in The Mocking Dead Volume 1",
+            "matched_tags": [
+              "rpg",
+              "comedy"
+            ]
+          },
+          {
+            "id": "22859",
+            "type": "game",
+            "title": "Deus Ex 2: Invisible War",
+            "cover_path": "https://media.rawg.io/media/screenshots/ca0/ca06700d8184f451b99396c23b4ffbe4.jpg",
+            "match_score": 49.0,
+            "because_explanation": "Because you loved the conspiracy themes in Borderline",
+            "matched_tags": [
+              "rpg",
+              "sci-fi",
+              "conspiracy"
+            ]
+          },
+          {
+            "id": "14422",
+            "type": "game",
+            "title": "Condemned: Criminal Origins",
+            "cover_path": "https://media.rawg.io/media/games/98d/98deaf99f06aa3d7e54e1fa69e4a9060.jpg",
+            "match_score": 48.2,
+            "because_explanation": "Because you loved the mystery themes in The Housemaid",
+            "matched_tags": [
+              "mystery"
+            ]
+          }
+        ]
+      }
+    ],
+    "experience_bundle": {
+      "source_item": {
+        "id": "9509",
+        "type": "movie",
+        "title": "Man on Fire",
+        "cover_path": "https://image.tmdb.org/t/p/w500/grCGLCcTHv9TChibzOwzUpykcjB.jpg"
+      },
+      "experience_bundle": {
+        "movie": {
+          "id": "101",
+          "title": "L\u00e9on",
+          "cover_path": "https://image.tmdb.org/t/p/w500/bxB2q91nKYp8JNzqE7t7TWBVupB.jpg",
+          "match_score": 76.8,
+          "reason": "The next movie to watch \u2014 shares the suspenseful & aggressive vibe of Man on Fire."
+        },
+        "game": {
+          "id": "3603",
+          "title": "Metro 2033 Redux",
+          "cover_path": "https://media.rawg.io/media/games/4fb/4fb548e4816c84d1d70f1a228fb167cc.jpg",
+          "match_score": 53.0,
+          "reason": "The game to live in that world \u2014 shares the remake vibe of Man on Fire."
+        },
+        "book": {
+          "id": "n6YcAQAAIAAJ",
+          "title": "Death's Dark Abyss",
+          "cover_path": "https://books.google.com/books/content?id=n6YcAQAAIAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+          "match_score": 58.8,
+          "reason": "The book to read deeper \u2014 shares the revenge vibe of Man on Fire."
+        },
+        "song": {
+          "id": "Childish Gambino::Bonfire",
+          "title": "Bonfire",
+          "cover_path": "",
+          "match_score": 41.2,
+          "reason": "The soundtrack to recapture the mood \u2014 similar mood and themes to Man on Fire.",
+          "artist": "Childish Gambino"
+        }
+      }
+    }
+  }
+}

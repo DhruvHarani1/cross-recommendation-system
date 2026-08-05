@@ -11,16 +11,10 @@ BASE_URL = "https://ws.audioscrobbler.com/2.0/"
 # Last.fm tags are crowd-sourced, so these names are what listeners
 # actually tag tracks with.
 SONG_TAGS = [
-    "bollywood",
-    "hindi",
-    "punjabi",
-    "indian",
-    "hollywood",
-    "pop",
-    "rock",
-    "hip hop",
-    "rnb",
-    "romantic"
+    "jazz", "blues", "country", "folk", "electronic", "dance", "house", "techno", "trance", "dubstep",
+    "classical", "reggae", "soul", "funk", "disco", "indie", "alternative", "metal", "punk", "grunge",
+    "kpop", "jpop", "latin", "salsa", "reggaeton", "afrobeat", "gospel", "acoustic", "ambient", "lo-fi",
+    "synthpop", "new wave", "ska", "trap", "drill", "grime", "drum and bass", "garage", "psychedelic", "experimental"
 ]
 
 

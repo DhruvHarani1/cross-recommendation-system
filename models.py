@@ -74,6 +74,16 @@ class UserInteraction(Base):
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
 
+class UserLibrary(Base):
+    __tablename__ = "user_library"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.user_id"))
+    content_id: Mapped[str] = mapped_column(String)
+    content_type: Mapped[str] = mapped_column(String)  # movie, song, game, book
+    added_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
 
 # ── Content Tables ────────────────────────────────────────────────────────────
 

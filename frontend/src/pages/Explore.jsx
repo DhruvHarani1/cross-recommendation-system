@@ -1,53 +1,97 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search, Film, Gamepad2, BookOpen, Music, Sparkles,
-  ArrowLeft, Loader2, X, ThumbsUp, ThumbsDown
-} from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Sparkles, Loader2, ArrowLeft } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import AuroraBackground from '../components/auth/AuroraBackground';
+
+// New Modular Components
+import MainNavbar from '../components/MainNavbar';
+import ExploreHero from '../components/explore/ExploreHero';
+import TrendingSearches from '../components/explore/TrendingSearches';
+import MoodSection from '../components/explore/MoodSection';
+import CategorySection from '../components/explore/CategorySection';
+import HiddenGems from '../components/explore/HiddenGems';
+import SurpriseCard from '../components/explore/SurpriseCard';
+import RecentSearches from '../components/explore/RecentSearches';
 import ContentCard from '../components/dashboard/ContentCard';
-
-const ease = [0.16, 1, 0.3, 1];
-
-const PROMPT_CHIPS = [
-  { label: 'The Matrix', query: 'The Matrix', type: 'movie' },
-  { label: 'Cyberpunk Dystopia', query: 'cyberpunk dystopian rebellion free will', type: null },
-  { label: 'Elden Ring', query: 'Elden Ring', type: 'game' },
-  { label: 'Dark Fantasy & Magic', query: 'dark fantasy dragons magic ancient mystery', type: null },
-  { label: 'Dune', query: 'Dune', type: 'book' },
-  { label: 'Cozy Slice of Life', query: 'cozy relaxing wholesome gentle warm', type: null },
-];
-
-const MEDIA_FILTERS = [
-  { id: 'all', label: 'All Media', emoji: '✨' },
-  { id: 'movie', label: 'Movies', icon: Film, emoji: '🎬' },
-  { id: 'game', label: 'Games', icon: Gamepad2, emoji: '🎮' },
-  { id: 'book', label: 'Books', icon: BookOpen, emoji: '📚' },
-  { id: 'song', label: 'Music', icon: Music, emoji: '🎵' },
-];
+import { getLibrary, saveToLibrary, removeFromLibrary } from '../api/user';
 
 export default function Explore() {
   const { user, token } = useAuth();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialQuery = searchParams.get('q') || '';
   const [query, setQuery] = useState(initialQuery);
-  const [selectedType, setSelectedType] = useState('all');
   const [loading, setLoading] = useState(false);
   const [searchData, setSearchData] = useState(null);
+  const [activeFilter, setActiveFilter] = useState('all');
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
+  
+  // Library State
+  const [savedItems, setSavedItems] = useState([]);
+  
+  // Recent Searches State
+  const [recentSearches, setRecentSearches] = useState([]);
 
-  const debounceRef = useRef(null);
+  useEffect(() => {
+    // Load recent searches from localStorage
+    try {
+      const saved = localStorage.getItem('crossrec_recent_searches');
+      if (saved) {
+        setRecentSearches(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Error loading recent searches', e);
+    }
+
+    if (user?.user_id) {
+      getLibrary(user.user_id).then(items => {
+        setSavedItems(items.map(i => i.id));
+      }).catch(console.error);
+    }
+
+    if (initialQuery) {
+      executeSearch(initialQuery);
+    }
+  }, []);
+
+  const saveRecentSearch = (searchTerm) => {
+    if (!searchTerm || searchTerm.trim().length < 2) return;
+    const term = searchTerm.trim();
+    
+    setRecentSearches((prev) => {
+      // Remove if already exists to push to front
+      const filtered = prev.filter(t => t.toLowerCase() !== term.toLowerCase());
+      const updated = [term, ...filtered].slice(0, 10); // Keep top 10
+      localStorage.setItem('crossrec_recent_searches', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const removeRecentSearch = (term) => {
+    setRecentSearches((prev) => {
+      const updated = prev.filter(t => t !== term);
+      localStorage.setItem('crossrec_recent_searches', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const clearAllRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('crossrec_recent_searches');
+  };
 
   const executeSearch = async (searchQuery, targetType = 'all') => {
     if (!searchQuery || searchQuery.trim().length < 2) return;
+    
+    setQuery(searchQuery);
     setLoading(true);
     setError('');
+    setActiveFilter('all');
+    
+    saveRecentSearch(searchQuery);
 
     try {
       let url = `/recommendations/search?q=${encodeURIComponent(searchQuery.trim())}&limit=12`;
@@ -71,32 +115,25 @@ export default function Explore() {
     }
   };
 
-  useEffect(() => {
-    if (initialQuery) {
-      executeSearch(initialQuery, selectedType);
-    }
-  }, []);
-
-  const handleInputChange = (val) => {
-    setQuery(val);
-    clearTimeout(debounceRef.current);
-    if (val.trim().length >= 2) {
-      debounceRef.current = setTimeout(() => {
-        executeSearch(val, selectedType);
-      }, 500);
-    }
+  const handleCategorySelect = (categoryId) => {
+    // If they click a category without a query, we can't easily "search" nothing via the current API.
+    // We'll prompt them to enter a query, or run a generic search.
+    const q = query.trim().length >= 2 ? query : 'masterpiece';
+    executeSearch(q, categoryId);
   };
 
-  const handlePromptClick = (chip) => {
-    setQuery(chip.query);
-    executeSearch(chip.query, selectedType);
+  const handleSurprise = () => {
+    const surprises = ['Mind bending thriller', 'Cozy wholesome', 'Dark fantasy epic', 'Cyberpunk masterpiece'];
+    const random = surprises[Math.floor(Math.random() * surprises.length)];
+    executeSearch(random);
   };
 
-  const handleFilterChange = (typeId) => {
-    setSelectedType(typeId);
-    if (query.trim().length >= 2) {
-      executeSearch(query, typeId);
-    }
+  const clearSearch = () => {
+    setQuery('');
+    setSearchData(null);
+    setError('');
+    setActiveFilter('all');
+    setSearchParams({});
   };
 
   const handleFeedback = async (item, interactionType) => {
@@ -118,224 +155,205 @@ export default function Explore() {
     }
   };
 
+  const handleSaveToggle = async (item) => {
+    if (!user?.user_id) return;
+    const isSaved = savedItems.some(id => String(id) === String(item.id));
+    const itemType = item.type?.toLowerCase();
+    try {
+      if (isSaved) {
+        await removeFromLibrary(user.user_id, String(item.id), itemType);
+        setSavedItems(prev => prev.filter(id => String(id) !== String(item.id)));
+        setToast({ message: "Removed from library", type: "save" });
+      } else {
+        await saveToLibrary(user.user_id, String(item.id), itemType);
+        setSavedItems(prev => [...prev, String(item.id)]);
+        setToast({ message: "Saved to library", type: "save" });
+      }
+      setTimeout(() => setToast(null), 3500);
+    } catch (err) {
+      console.error('Save error:', err);
+    }
+  };
+
+  const isSearchActive = searchData || loading || error;
+
   return (
-    <div className="relative min-h-screen w-full bg-[#050505] flex flex-col overflow-x-hidden">
-      <AuroraBackground />
+    <div className="relative min-h-screen w-full bg-[#050505] flex flex-col overflow-x-hidden font-sans">
+      {/* Premium Cinematic Background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-900/10 via-[#050505] to-[#050505]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-blue-900/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 opacity-[0.015] mix-blend-overlay" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
+      </div>
 
-      {/* ─── Navbar ─── */}
-      <motion.nav
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease }}
-        className="relative z-20 flex items-center justify-between px-6 sm:px-12 py-6 bg-gradient-to-b from-[#050505] to-transparent"
-      >
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white/50 text-xs font-medium hover:text-white hover:border-white/20 transition-all duration-300"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Feed
-        </button>
+      <MainNavbar />
 
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-purple-400" />
-          <span className="text-xs uppercase tracking-[0.3em] text-white/40 font-medium">
-            Cross-Domain Search & Discover
-          </span>
-        </div>
-      </motion.nav>
+      <main className="relative z-10 flex-1 w-full pb-20">
+        <ExploreHero 
+          query={query} 
+          setQuery={setQuery} 
+          onSearch={(q) => executeSearch(q)} 
+          loading={loading} 
+        />
 
-      {/* ─── Search Hero ─── */}
-      <main className="relative z-10 flex-1 px-6 sm:px-12 pb-20 max-w-6xl mx-auto w-full">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease }}
-          className="text-center max-w-2xl mx-auto mb-10 pt-4"
-        >
-          <h1 className="text-4xl sm:text-5xl font-medium text-white tracking-tight mb-3">
-            Search by feeling.
-          </h1>
-          <p className="text-white/40 text-base leading-relaxed">
-            Type any title, concept, or vibe. CrossRec finds connected stories across film, games, books, and music.
-          </p>
-        </motion.div>
-
-        {/* Large Search Input */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.1, ease }}
-          className="relative max-w-2xl mx-auto mb-6"
-        >
-          <div className="relative flex items-center rounded-2xl border border-white/15 bg-white/[0.04] backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition-all duration-300 focus-within:border-purple-500/40 focus-within:shadow-[0_0_40px_rgba(168,85,247,0.2)]">
-            <Search className="w-5 h-5 text-white/30 ml-5 flex-shrink-0" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && executeSearch(query, selectedType)}
-              placeholder="e.g. The Matrix, dark cyberpunk, or mind bending time travel..."
-              className="w-full px-4 py-4 bg-transparent text-white text-base placeholder-white/25 focus:outline-none"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => { setQuery(''); setSearchData(null); }}
-                className="mr-3 p-1 rounded-full text-white/30 hover:text-white/70 transition-colors"
+        <AnimatePresence mode="wait">
+          {!isSearchActive ? (
+            <motion.div
+              key="playground"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="w-full flex flex-col gap-8"
+            >
+              <RecentSearches 
+                searches={recentSearches} 
+                onSearch={(q) => executeSearch(q)} 
+                onClearSearch={removeRecentSearch}
+                onClearAll={clearAllRecentSearches}
+              />
+              <TrendingSearches onSearch={(q) => executeSearch(q)} />
+              <MoodSection onSearch={(q) => executeSearch(q)} />
+              <CategorySection onSelectCategory={handleCategorySelect} />
+              <HiddenGems />
+              <SurpriseCard onSurprise={handleSurprise} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="search-results"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
+              transition={{ duration: 0.5 }}
+              className="w-full max-w-7xl mx-auto px-6 sm:px-12 pt-8"
+            >
+              {/* Back to Explore Button */}
+              <button 
+                onClick={clearSearch}
+                className="mb-8 flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-medium"
               >
-                <X className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4" />
+                Back to Explore
               </button>
-            )}
-            <button
-              type="button"
-              onClick={() => executeSearch(query, selectedType)}
-              disabled={loading || !query.trim()}
-              className="mr-3 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 text-white text-xs font-medium shadow-md hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Explore'}
-            </button>
-          </div>
-        </motion.div>
 
-        {/* Prompt Suggestion Chips */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto mb-10"
-        >
-          <span className="text-[11px] text-white/25 uppercase tracking-wider mr-1">Try searching:</span>
-          {PROMPT_CHIPS.map((chip) => (
-            <motion.button
-              key={chip.label}
-              type="button"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handlePromptClick(chip)}
-              className="px-3.5 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] backdrop-blur-md text-white/40 text-xs font-medium hover:text-white/80 hover:border-white/20 transition-all duration-300"
-            >
-              ✨ {chip.label}
-            </motion.button>
-          ))}
-        </motion.div>
-
-        {/* Media Type Filter Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="flex justify-center mb-10"
-        >
-          <div className="inline-flex p-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-md">
-            {MEDIA_FILTERS.map((f) => {
-              const active = selectedType === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => handleFilterChange(f.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 ${
-                    active
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 shadow-[0_0_16px_rgba(168,85,247,0.15)]'
-                      : 'text-white/40 hover:text-white/70'
-                  }`}
-                >
-                  <span>{f.emoji}</span>
-                  <span>{f.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Loading Spinner */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 text-white/30">
-            <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-            <p className="text-sm tracking-wide">Searching across mediums & mapping semantic themes...</p>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && !loading && (
-          <div className="text-center py-16 text-red-400 text-sm max-w-md mx-auto">
-            {error}
-          </div>
-        )}
-
-        {/* Search Results Display */}
-        {!loading && searchData && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease }}
-            className="space-y-10"
-          >
-            {/* Matched Source Item Banner */}
-            {searchData.source_title && (
-              <div className="p-6 rounded-2xl border border-purple-500/20 bg-purple-500/[0.06] backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-300">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase tracking-wider text-purple-300/60 font-medium">Matched Query Source</span>
-                    <h3 className="text-xl font-medium text-white tracking-tight">{searchData.source_title}</h3>
-                  </div>
-                </div>
-                <span className="text-xs text-white/35">
-                  Showing cross-domain recommendations
-                </span>
-              </div>
-            )}
-
-            {/* Results Grid */}
-            <div>
-              <div className="flex items-center justify-between mb-6 px-1">
-                <h3 className="text-xl font-medium text-white tracking-tight">
-                  Cross-Medium Recommendations
-                </h3>
-                <span className="text-xs text-white/30">
-                  {searchData.recommendations?.length || 0} matches found
-                </span>
-              </div>
-
-              {searchData.recommendations?.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {searchData.recommendations.map((rec, i) => (
-                    <motion.div
-                      key={`${rec.type}-${rec.id}-${i}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: i * 0.05 }}
-                    >
-                      <ContentCard item={rec} onFeedback={handleFeedback} />
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-16 text-white/30 text-sm">
-                  No recommendations found for this specific filter. Try selecting 'All Media'.
+              {loading && (
+                <div className="flex flex-col items-center justify-center py-32 gap-4 text-white/30">
+                  <Loader2 className="w-10 h-10 animate-spin text-purple-500" />
+                  <p className="text-sm font-medium tracking-wide">Searching the multiverse...</p>
                 </div>
               )}
-            </div>
-          </motion.div>
-        )}
+
+              {error && !loading && (
+                <div className="text-center py-32">
+                  <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                    <X className="w-8 h-8 text-red-400" />
+                  </div>
+                  <p className="text-red-400 text-lg">{error}</p>
+                </div>
+              )}
+
+              {!loading && searchData && (
+                <div className="space-y-10">
+                  {/* Matched Source Banner */}
+                  {searchData.source_title && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="p-8 rounded-3xl border border-purple-500/20 bg-gradient-to-r from-purple-900/20 to-transparent backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-6"
+                    >
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-300 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+                          <Sparkles className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <span className="text-[11px] uppercase tracking-[0.2em] text-purple-300/60 font-semibold block mb-1">
+                            Matched Context
+                          </span>
+                          <h3 className="text-2xl font-bold text-white tracking-tight">{searchData.source_title}</h3>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Results Grid */}
+                  <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                      <div className="flex items-center gap-4">
+                        <h3 className="text-2xl font-semibold text-white tracking-tight">
+                          Recommendations
+                        </h3>
+                        <span className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/50">
+                          {searchData.recommendations?.filter(rec => activeFilter === 'all' || rec.type.toLowerCase() === activeFilter.toLowerCase()).length || 0} found
+                        </span>
+                      </div>
+
+                      {/* Pill Bar Filter */}
+                      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-x-auto scrollbar-hide">
+                        {['all', 'movie', 'game', 'book', 'song'].map((f) => (
+                          <button
+                            key={f}
+                            onClick={() => setActiveFilter(f)}
+                            className={`px-4 py-2 rounded-xl text-sm font-medium tracking-wide transition-all capitalize whitespace-nowrap ${
+                              activeFilter === f
+                                ? f === 'all' ? 'bg-white/20 text-white shadow-lg'
+                                : f === 'movie' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                                : f === 'game' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+                                : f === 'book' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                                : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                : 'text-white/40 hover:text-white hover:bg-white/10'
+                            } border border-transparent`}
+                          >
+                            {f === 'all' ? 'All' : f + 's'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const filtered = searchData.recommendations?.filter(rec => activeFilter === 'all' || rec.type.toLowerCase() === activeFilter.toLowerCase()) || [];
+                      return filtered.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+                          {filtered.map((rec, i) => (
+                            <motion.div
+                              key={`${rec.type}-${rec.id}-${i}`}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.5, delay: i * 0.05 }}
+                            >
+                              <ContentCard 
+                                item={rec} 
+                                onFeedback={handleFeedback} 
+                                onSave={handleSaveToggle}
+                                savedItems={savedItems}
+                              />
+                            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-20 text-white/30 text-lg">
+                          No {activeFilter !== 'all' ? activeFilter : ''} matches found in this result. Try broadening your search.
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Feedback Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            initial={{ opacity: 0, y: 40, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.3, ease }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl border border-purple-500/30 bg-black/85 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-4 rounded-2xl border border-purple-500/30 bg-black/90 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
           >
-            <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0" />
-            <p className="text-white/90 text-xs sm:text-sm font-medium tracking-wide">
+            <Sparkles className="w-5 h-5 text-purple-400" />
+            <p className="text-white text-sm font-medium tracking-wide">
               {toast.message}
             </p>
           </motion.div>

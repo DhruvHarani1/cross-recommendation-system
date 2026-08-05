@@ -8,19 +8,31 @@ BOOKS_API_KEY = os.getenv('GOOGLE_BOOKS_API_KEY')
 BASE_URL = "https://www.googleapis.com/books/v1/volumes"
 
 BOOK_SUBJECTS = [
-    "fantasy",
-    "science fiction",
-    "romance",
-    "mystery",
-    "thriller",
-    "horror",
-    "adventure",
-    "historical fiction",
-    "young adult",
-    "crime",
-    "drama",
-    "dystopian",
-    "mythology"
+    "fantasy", "science fiction", "romance", "mystery", "thriller", "horror",
+    "adventure", "historical fiction", "young adult", "crime", "drama",
+    "dystopian", "mythology", "biography", "autobiography", "memoir",
+    "self-help", "business", "economics", "investing", "psychology",
+    "philosophy", "history", "politics", "sociology", "anthropology",
+    "true crime", "science", "technology", "programming", "mathematics",
+    "physics", "chemistry", "biology", "astronomy", "medicine",
+    "health", "fitness", "cooking", "baking", "diet", "nutrition",
+    "travel", "guide", "art", "photography", "architecture",
+    "design", "music", "film", "theater", "dance",
+    "poetry", "classics", "literature", "humor", "comedy",
+    "satire", "comics", "graphic novels", "manga", "children",
+    "middle grade", "picture books", "parenting", "family", "education",
+    "teaching", "religion", "spirituality", "theology", "sports",
+    "hobbies", "crafts", "gardening", "pets", "animals", "nature",
+    "cyberpunk", "steampunk", "urban fantasy", "dark fantasy", "epic fantasy",
+    "space opera", "hard sci-fi", "time travel", "military sci-fi", "post-apocalyptic",
+    "zombies", "vampires", "werewolves", "paranormal", "supernatural", "magic",
+    "witchcraft", "occult", "tarot", "astrology", "meditation", "yoga",
+    "buddhism", "christianity", "islam", "judaism", "hinduism", "mythical",
+    "folklore", "fairy tales", "legends", "fables", "short stories", "anthologies",
+    "essays", "literary criticism", "linguistics", "journalism", "writing",
+    "publishing", "books about books", "typography", "calligraphy", "origami",
+    "knitting", "sewing", "woodworking", "carpentry", "plumbing", "electrical",
+    "automotive", "motorcycles", "bicycles", "sailing", "aviation", "spaceflight"
 ]
 
 
@@ -28,7 +40,7 @@ def fetch_books(subject: str, start_index: int = 0, max_results: int = 40):
     
 
     params = {
-        "q": f"subject:{subject}",
+        "q": subject,  # Search entire book metadata instead of just the strict subject category
         "startIndex": start_index,
         "maxResults": max_results,
         "printType": "books",

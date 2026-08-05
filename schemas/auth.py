@@ -30,3 +30,6 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+class GoogleAuthRequest(BaseModel):
+    access_token: str

@@ -12,6 +12,10 @@ from services.auth_service import (
     verify_password,
     create_access_token
 )
+from schemas.auth import GoogleAuthRequest
+from google.oauth2 import id_token
+from google.auth.transport import requests
+import os
 
 router = APIRouter(
     prefix="/auth",
@@ -127,3 +131,67 @@ def get_me(
 ):
 
     return current_user
+
+
+import httpx
+
+@router.post("/google", response_model=LoginResponse)
+async def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
+    try:
+        # Fetch user info using access_token
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {request.access_token}"}
+            )
+            response.raise_for_status()
+            user_info = response.json()
+            
+        email = user_info.get("email")
+        name = user_info.get("name", "")
+        
+        # Check if user exists
+        db_user = db.query(User).filter(User.email == email).first()
+        
+        if not db_user:
+            # Create a new user for Google login
+            # Generate a username from email if not provided, ensuring uniqueness
+            base_username = email.split('@')[0]
+            username = base_username
+            counter = 1
+            while db.query(User).filter(User.username == username).first():
+                username = f"{base_username}{counter}"
+                counter += 1
+                
+            db_user = User(
+                user_id=str(uuid.uuid4()),
+                username=username,
+                email=email,
+                password_hash=None, # No password for OAuth users
+                display_name=name,
+                provider="google",
+                is_active=True,
+            )
+            db.add(db_user)
+            db.commit()
+            db.refresh(db_user)
+
+        # Generate JWT token
+        token = create_access_token(
+            {
+                "sub": db_user.user_id,
+                "username": db_user.username
+            }
+        )
+
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": db_user
+        }
+
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid Google token"
+        )

@@ -76,6 +76,21 @@ export function AuthProvider({ children }) {
   }, []);
 
   /* ────────────────────────────────────────────────
+   * googleLogin(googleAccessToken)
+   * Calls POST /auth/google with Google access token,
+   * persists the JWT, and stores the user in context.
+   * ──────────────────────────────────────────────── */
+  const googleLogin = useCallback(async (googleAccessToken) => {
+    const res = await api.post('/auth/google', { access_token: googleAccessToken });
+    const { access_token, user: loggedInUser } = res.data;
+
+    persistToken(access_token);
+    setUser(loggedInUser);
+
+    return loggedInUser;
+  }, []);
+
+  /* ────────────────────────────────────────────────
    * logout()
    * Clears everything and sends the user to /login.
    * ──────────────────────────────────────────────── */
@@ -90,9 +105,11 @@ export function AuthProvider({ children }) {
     loading,
     isAuthenticated: !!user,
     login,
+    googleLogin,
     logout,
     checkAuth,
   };
+
 
   return (
     <AuthContext.Provider value={value}>

@@ -14,12 +14,69 @@ from models import (
 from services.api_fallback_service import search_external_apis
 
 _model = None
+_embedding_cache = None
+_title_cache = None
 
 def get_model():
     global _model
     if _model is None:
         _model = SentenceTransformer("all-MiniLM-L6-v2")
     return _model
+
+def _get_or_load_cache(db: Session):
+    global _embedding_cache
+    if _embedding_cache is not None:
+        return _embedding_cache
+        
+    print("Loading embeddings into memory cache. This may take ~10-15 seconds...")
+    rows = db.query(
+        ContentEmbedding.content_id, 
+        ContentEmbedding.content_type, 
+        ContentEmbedding.embedding, 
+        ContentEmbedding.popularity_score
+    ).all()
+    
+    matrix = []
+    metadata = []
+    for r in rows:
+        vec = np.array(r.embedding)
+        norm = np.linalg.norm(vec)
+        if norm == 0:
+            continue
+        matrix.append(vec / norm)
+        metadata.append({
+            "id": r.content_id,
+            "type": r.content_type,
+            "pop": r.popularity_score / 100.0
+        })
+        
+    _embedding_cache = {
+        "matrix": np.array(matrix),
+        "metadata": metadata
+    }
+    print(f"Loaded {len(rows)} embeddings into cache.")
+    return _embedding_cache
+
+def _get_or_load_title_cache(db: Session):
+    global _title_cache
+    if _title_cache is not None:
+        return _title_cache
+        
+    print("Loading title dictionary into memory cache...")
+    all_items = []
+    for cid, title in db.query(Movie.movie_id, Movie.movie_title).all():
+        all_items.append((str(cid), "movie", title, title.lower()))
+    for cid, title, artist in db.query(Song.song_id, Song.song_title, Song.song_artist).all():
+        full_str = f"{title} by {artist}".lower()
+        all_items.append((str(cid), "song", title, full_str))
+        all_items.append((str(cid), "song", title, title.lower()))
+    for cid, title in db.query(Game.game_id, Game.game_title).all():
+        all_items.append((str(cid), "game", title, title.lower()))
+    for cid, title in db.query(Book.book_id, Book.book_title).all():
+        all_items.append((str(cid), "book", title, title.lower()))
+        
+    _title_cache = all_items
+    return _title_cache
 
 def get_keywords_str(db: Session, content_id: str, content_type: str) -> str:
     """Fetches a comma-separated list of keywords for any content type."""
@@ -175,6 +232,21 @@ def get_or_create_embedding(db: Session , content_id :str , content_type:str)->n
     )
     db.add(embedding_record)
     db.commit()
+    
+    # Dynamically update the cache if it's already loaded!
+    global _embedding_cache
+    if _embedding_cache is not None:
+        vec = np.array(vector)
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            norm_vec = vec / norm
+            _embedding_cache["matrix"] = np.vstack([_embedding_cache["matrix"], norm_vec])
+            _embedding_cache["metadata"].append({
+                "id": content_id,
+                "type": content_type,
+                "pop": 50.0 / 100.0
+            })
+            
     return np.array(vector)
 
 def get_recommendations(db: Session, source_id: str, source_type: str, target_types: List[str] = None, limit: int = 5):
@@ -192,34 +264,32 @@ def get_recommendations(db: Session, source_id: str, source_type: str, target_ty
 
     # 1. Fetch source vector
     source_vector = get_or_create_embedding(db, str(source_id), source_type)
+    norm_src = np.linalg.norm(source_vector)
+    if norm_src > 0:
+        source_vector = source_vector / norm_src
 
     # 2. Get target candidates from the DB
-    query = db.query(ContentEmbedding)
-    if filter_types:
-        query = query.filter(ContentEmbedding.content_type.in_(filter_types))
-    candidates = query.all()
-    if not candidates:
-        return []
+    cache = _get_or_load_cache(db)
+    
+    # 3. Calculate similarity score for each candidate (vectorized)
+    similarities = np.dot(cache["matrix"], source_vector)
 
-    # 3. Calculate similarity score for each candidate
     scored_items = []
-    for cand in candidates:
+    for i, meta in enumerate(cache["metadata"]):
         # Skip the exact source item itself
-        if cand.content_type == source_type and cand.content_id == str(source_id):
+        if meta["type"] == source_type and meta["id"] == str(source_id):
             continue
-        cand_vector = np.array(cand.embedding)
-
-        dot_product = np.dot(source_vector, cand_vector)
-        norm_src = np.linalg.norm(source_vector)
-        norm_cand = np.linalg.norm(cand_vector)
-        similarity = float(dot_product / (norm_src * norm_cand)) if norm_src and norm_cand else 0.0
-
-        final_score = (0.8 * similarity) + (0.2 * (cand.popularity_score / 100.0))
+            
+        if filter_types and meta["type"] not in filter_types:
+            continue
+            
+        sim = float(similarities[i])
+        final_score = (0.8 * sim) + (0.2 * meta["pop"])
 
         scored_items.append({
-            "id": cand.content_id,
-            "type": cand.content_type,
-            "similarity": similarity,
+            "id": meta["id"],
+            "type": meta["type"],
+            "similarity": sim,
             "final_score": final_score
         })
 
@@ -291,23 +361,13 @@ def search_and_recommend(db: Session, query_text: str, source_type: Optional[str
     source_type: optional filter to narrow search to a specific type (movie/song/game/book).
     """
     
-    # Collect items from the DB with display titles and searchable full strings
-    # Entry format: (item_id, item_type, primary_title, full_searchable_string)
-    all_items = []
-    if not source_type or source_type == "movie":
-        for m in db.query(Movie).all():
-            all_items.append((str(m.movie_id), "movie", m.movie_title, m.movie_title.lower()))
-    if not source_type or source_type == "song":
-        for s in db.query(Song).all():
-            full_str = f"{s.song_title} by {s.song_artist}".lower()
-            all_items.append((str(s.song_id), "song", s.song_title, full_str))
-            all_items.append((str(s.song_id), "song", s.song_title, s.song_title.lower()))
-    if not source_type or source_type == "game":
-        for g in db.query(Game).all():
-            all_items.append((str(g.game_id), "game", g.game_title, g.game_title.lower()))
-    if not source_type or source_type == "book":
-        for b in db.query(Book).all():
-            all_items.append((str(b.book_id), "book", b.book_title, b.book_title.lower()))
+    # Use cached title dictionary (skips extremely slow ORM objects)
+    cached_items = _get_or_load_title_cache(db)
+    
+    if source_type:
+        all_items = [item for item in cached_items if item[1] == source_type]
+    else:
+        all_items = cached_items
 
     query_lower = query_text.lower().strip()
     # Extract title portion if query contains " by " (e.g. "Frozen Heart by 8bitit")
@@ -373,31 +433,29 @@ def search_and_recommend(db: Session, query_text: str, source_type: Optional[str
     if not resolved_id:
         query_vector = get_model().encode(query_text).tolist()
         query_arr = np.array(query_vector)
-
-        emb_query = db.query(ContentEmbedding)
-        if source_type:
-            emb_query = emb_query.filter(ContentEmbedding.content_type == source_type)
-        all_embeddings = emb_query.all()
-
-        if all_embeddings:
-            best_match = None
-            best_similarity = -1.0
-
-            for cand in all_embeddings:
-                cand_arr = np.array(cand.embedding)
-                dot_product = np.dot(query_arr, cand_arr)
-                norm_q = np.linalg.norm(query_arr)
-                norm_c = np.linalg.norm(cand_arr)
-                similarity = float(dot_product / (norm_q * norm_c)) if norm_q and norm_c else 0.0
-
-                if similarity > best_similarity:
-                    best_similarity = similarity
-                    best_match = cand
-
-            if best_match and best_similarity >= 0.35:
-                resolved_id = best_match.content_id
-                resolved_type = best_match.content_type
-                match_score = round(best_similarity * 100, 1)
+        norm_q = np.linalg.norm(query_arr)
+        if norm_q > 0:
+            query_arr = query_arr / norm_q
+            
+        cache = _get_or_load_cache(db)
+        similarities = np.dot(cache["matrix"], query_arr)
+        
+        best_match_idx = -1
+        best_similarity = -1.0
+        
+        for i, meta in enumerate(cache["metadata"]):
+            if source_type and meta["type"] != source_type:
+                continue
+            
+            sim = float(similarities[i])
+            if sim > best_similarity:
+                best_similarity = sim
+                best_match_idx = i
+                
+        if best_match_idx != -1 and best_similarity >= 0.35:
+            resolved_id = cache["metadata"][best_match_idx]["id"]
+            resolved_type = cache["metadata"][best_match_idx]["type"]
+            match_score = round(best_similarity * 100, 1)
 
     if not resolved_id:
         return None

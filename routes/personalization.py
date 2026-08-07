@@ -273,7 +273,6 @@ def dashboard_feed(
     pre_tag_dict = {t["tag"]: t["score"] for t in tag_prefs}
     tag_names = [t["tag"] for t in tag_prefs[:5]]
 
-    pre_all_embeddings = db.query(ContentEmbedding).all()
     user_interactions = db.query(UserInteraction).filter(UserInteraction.user_id == user_id).all()
     pre_interacted = {(inter.content_id, inter.content_type) for inter in user_interactions}
 
@@ -286,7 +285,7 @@ def dashboard_feed(
         top_picks = get_personalized_recommendations(
             db, user_id, ["all"], limit=10, alpha=0.4,
             pre_taste_vector=pre_taste_vector, pre_tag_dict=pre_tag_dict,
-            pre_all_embeddings=pre_all_embeddings, pre_interacted=pre_interacted
+            pre_interacted=pre_interacted
         )
         if top_picks and top_picks.get("recommendations"):
             sections.append({
@@ -304,7 +303,7 @@ def dashboard_feed(
             tag_recs = get_personalized_recommendations(
                 db, user_id, ["all"], limit=8, alpha=0.7,
                 pre_taste_vector=pre_taste_vector, pre_tag_dict=pre_tag_dict,
-                pre_all_embeddings=pre_all_embeddings, pre_interacted=pre_interacted
+                pre_interacted=pre_interacted
             )
             if tag_recs and tag_recs.get("recommendations"):
                 tagged_items = [
@@ -328,7 +327,7 @@ def dashboard_feed(
             type_recs = get_personalized_recommendations(
                 db, user_id, [ptype], limit=10, alpha=0.3,
                 pre_taste_vector=pre_taste_vector, pre_tag_dict=pre_tag_dict,
-                pre_all_embeddings=pre_all_embeddings, pre_interacted=pre_interacted
+                pre_interacted=pre_interacted
             )
             if type_recs and type_recs.get("recommendations"):
                 type_label = ptype.capitalize() + "s"

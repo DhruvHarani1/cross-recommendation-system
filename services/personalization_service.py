@@ -377,7 +377,6 @@ def get_personalized_recommendations(
     alpha: float = 0.4,
     pre_taste_vector: Optional[dict] = None,
     pre_tag_dict: Optional[dict] = None,
-    pre_all_embeddings: Optional[List[ContentEmbedding]] = None,
     pre_interacted: Optional[set] = None
 ) -> Optional[dict]:
     """Generate personalized recommendations blending taste vector + tag bridge using vectorized NumPy matrix math."""
@@ -396,30 +395,15 @@ def get_personalized_recommendations(
     else:
         filter_types = target_types
 
-    if pre_all_embeddings is not None:
-        if filter_types:
-            all_embeddings = [c for c in pre_all_embeddings if c.content_type in filter_types]
-        else:
-            all_embeddings = pre_all_embeddings
-    else:
-        emb_query = db.query(ContentEmbedding)
-        if filter_types:
-            emb_query = emb_query.filter(ContentEmbedding.content_type.in_(filter_types))
-        all_embeddings = emb_query.all()
-
-    if not all_embeddings:
-        return None
-
+    from services.recommendation_service import _get_or_load_cache
+    cache = _get_or_load_cache(db)
+    
     # Exclude items the user has already interacted with
     if pre_interacted is not None:
         interacted = pre_interacted
     else:
         user_interactions = db.query(UserInteraction).filter(UserInteraction.user_id == user_id).all()
         interacted = {(inter.content_id, inter.content_type) for inter in user_interactions}
-
-    candidates = [c for c in all_embeddings if (c.content_id, c.content_type) not in interacted]
-    if not candidates:
-        return None
 
     # Vectorized similarity matrix calculation
     if isinstance(taste_profile, np.ndarray):
@@ -429,39 +413,46 @@ def get_personalized_recommendations(
         pos_clusters = taste_profile.get("positive_clusters", [])
         neg_vector = taste_profile.get("negative_vector", None)
 
-    emb_matrix = np.array([c.embedding for c in candidates])
-    cand_norms = np.linalg.norm(emb_matrix, axis=1)
-    cand_norms[cand_norms == 0] = 1.0
+    matrix = cache["matrix"]
+    metadata = cache["metadata"]
 
-    vector_sims = np.zeros(len(candidates)) - 1.0
+    vector_sims = np.zeros(len(metadata)) - 1.0
     for cluster in pos_clusters:
         cluster_norm = np.linalg.norm(cluster)
         if cluster_norm == 0: cluster_norm = 1.0
-        sims = np.dot(emb_matrix, cluster) / (cand_norms * cluster_norm)
+        sims = np.dot(matrix, cluster) / cluster_norm
         vector_sims = np.maximum(vector_sims, sims)
 
     if neg_vector is not None:
         neg_norm = np.linalg.norm(neg_vector)
         if neg_norm == 0: neg_norm = 1.0
-        neg_sims = np.dot(emb_matrix, neg_vector) / (cand_norms * neg_norm)
+        neg_sims = np.dot(matrix, neg_vector) / neg_norm
         vector_sims = vector_sims - 0.5 * np.maximum(0, neg_sims)
 
-    # Take top 60 candidate indices by vector similarity for tag scoring
-    top_indices = np.argsort(vector_sims)[::-1][:60]
-    top_candidates = [candidates[idx] for idx in top_indices]
-    cand_keys = [(c.content_id, c.content_type) for c in top_candidates]
+    # Take top indices by vector similarity for tag scoring
+    top_indices = np.argsort(vector_sims)[::-1][:200]
+    
+    top_candidates = []
+    for idx in top_indices:
+        meta = metadata[idx]
+        if (meta["id"], meta["type"]) in interacted:
+            continue
+        if filter_types and meta["type"] not in filter_types:
+            continue
+        top_candidates.append((meta, float(vector_sims[idx])))
+        if len(top_candidates) >= 60:
+            break
+
+    cand_keys = [(meta["id"], meta["type"]) for meta, _ in top_candidates]
 
     # Single batch SQL query for keywords across all top candidates
     keywords_map = batch_get_keywords(db, cand_keys)
     max_possible_tag = sum(sorted(tag_dict.values(), reverse=True)[:5]) if tag_dict else 1.0
 
     scored_items = []
-    for idx in top_indices:
-        cand = candidates[idx]
-        v_sim = float(vector_sims[idx])
-
+    for meta, v_sim in top_candidates:
         # Tag bridge score from pre-fetched batch dictionary
-        cand_kws = keywords_map.get((cand.content_type, cand.content_id), "")
+        cand_kws = keywords_map.get((meta["type"], meta["id"]), "")
         tag_score = 0.0
         matched_tags = []
         if cand_kws:
@@ -475,8 +466,8 @@ def get_personalized_recommendations(
         final_score = (1 - alpha) * v_sim + alpha * tag_sim
 
         scored_items.append({
-            "content_id": cand.content_id,
-            "content_type": cand.content_type,
+            "content_id": meta["id"],
+            "content_type": meta["type"],
             "score": final_score,
             "matched_tags": matched_tags[:3]
         })
@@ -556,29 +547,28 @@ def get_experience_bundle(
         "song": "The soundtrack to recapture the mood"
     }
 
-    for domain, role in DOMAIN_ROLES.items():
-        embeddings = (
-            db.query(ContentEmbedding)
-            .filter(ContentEmbedding.content_type == domain)
-            .all()
-        )
-        
-        candidates = [c for c in embeddings if not (c.content_id == content_id and c.content_type == content_type)]
-        if not candidates:
-            continue
+    from services.recommendation_service import _get_or_load_cache
+    cache = _get_or_load_cache(db)
+    matrix = cache["matrix"]
+    metadata = cache["metadata"]
+    
+    # Normalize source
+    norm_s = np.linalg.norm(source_vector)
+    if norm_s > 0: source_vector = source_vector / norm_s
 
-        cand_matrix = np.array([c.embedding for c in candidates])
+    for domain, role in DOMAIN_ROLES.items():
+        # Filter metadata by domain
+        domain_indices = [i for i, m in enumerate(metadata) if m["type"] == domain and not (m["id"] == content_id and m["type"] == content_type)]
+        if not domain_indices:
+            continue
+            
+        domain_matrix = matrix[domain_indices]
         
         # Content similarity (vectorized)
-        dot = np.dot(cand_matrix, source_vector)
-        norm_s = np.linalg.norm(source_vector)
-        norm_c = np.linalg.norm(cand_matrix, axis=1)
-        norm_c[norm_c == 0] = 1.0
-        
-        sims = dot / (norm_s * norm_c) if norm_s else np.zeros(len(candidates))
+        sims = np.dot(domain_matrix, source_vector)
         
         # Taste bonus (vectorized)
-        taste_bonus = np.zeros(len(candidates))
+        taste_bonus = np.zeros(len(domain_indices))
         if taste_vector is not None:
             if isinstance(taste_vector, np.ndarray):
                 pos_clusters = [taste_vector]
@@ -590,25 +580,28 @@ def get_experience_bundle(
             for cluster in pos_clusters:
                 t_norm = np.linalg.norm(cluster)
                 if t_norm > 0:
-                    t_dot = np.dot(cand_matrix, cluster)
-                    cluster_bonus = (t_dot / (t_norm * norm_c)) * 0.15
+                    t_dot = np.dot(domain_matrix, cluster)
+                    cluster_bonus = (t_dot / t_norm) * 0.15
                     taste_bonus = np.maximum(taste_bonus, cluster_bonus)
                     
             if neg_vector is not None:
                 n_norm = np.linalg.norm(neg_vector)
                 if n_norm > 0:
-                    n_dot = np.dot(cand_matrix, neg_vector)
-                    n_sim = n_dot / (n_norm * norm_c)
+                    n_dot = np.dot(domain_matrix, neg_vector)
+                    n_sim = n_dot / n_norm
                     taste_bonus = taste_bonus - 0.10 * np.maximum(0, n_sim)
         
         base_scores = sims + taste_bonus
         
         # Take top 30 candidates by base score to calculate tag bonus
-        top_indices = np.argsort(base_scores)[::-1][:30]
-        top_candidates = [candidates[idx] for idx in top_indices]
+        top_local_indices = np.argsort(base_scores)[::-1][:30]
         
-        # Batch fetch keywords for ONLY the top 30 candidates to avoid N+1 queries
-        cand_keys = [(c.content_id, c.content_type) for c in top_candidates]
+        cand_keys = []
+        top_candidates = []
+        for i in top_local_indices:
+            orig_meta = metadata[domain_indices[i]]
+            cand_keys.append((orig_meta["id"], orig_meta["type"]))
+            top_candidates.append((orig_meta, float(base_scores[i])))
         from services.recommendation_service import batch_get_keywords
         keywords_map = batch_get_keywords(db, cand_keys)
         
@@ -616,12 +609,9 @@ def get_experience_bundle(
         best_item = None
         best_shared_tags = []
 
-        for idx, cand in enumerate(top_candidates):
-            orig_idx = top_indices[idx]
-            base_score = float(base_scores[orig_idx])
-            
+        for meta, base_score in top_candidates:
             # Tag overlap bonus
-            cand_kws_str = keywords_map.get((cand.content_type, cand.content_id), "")
+            cand_kws_str = keywords_map.get((meta["type"], meta["id"]), "")
             cand_kw_set = set(kw.strip().lower() for kw in cand_kws_str.split(", ") if len(kw.strip()) >= 3)
             shared = source_kw_set & cand_kw_set
             tag_bonus = min(len(shared) * 0.05, 0.2)  # up to 0.2 bonus
@@ -630,11 +620,11 @@ def get_experience_bundle(
             
             if total > best_score:
                 best_score = total
-                best_item = cand
+                best_item = meta
                 best_shared_tags = list(shared)[:3]
 
         if best_item:
-            meta = resolve_metadata(db, best_item.content_id, best_item.content_type)
+            meta = resolve_metadata(db, best_item["id"], best_item["type"])
 
             # Build reason string
             if best_shared_tags:
@@ -644,7 +634,7 @@ def get_experience_bundle(
                 reason = f"{role} — similar mood and themes to {source_meta['title']}."
 
             entry = {
-                "id": best_item.content_id,
+                "id": best_item["id"],
                 "title": meta["title"],
                 "cover_path": meta["cover_path"],
                 "match_score": round(best_score * 100, 1),
@@ -653,7 +643,7 @@ def get_experience_bundle(
 
             # Extra metadata
             if domain == "song":
-                song = db.get(Song, best_item.content_id)
+                song = db.get(Song, best_item["id"])
                 if song:
                     entry["artist"] = song.song_artist
 

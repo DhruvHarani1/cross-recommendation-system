@@ -21,7 +21,7 @@ def fetch_movie(page: int = 1):
     params = {
         "api_key": API_KEY,
         "page": page,
-        "sort_by": "popularity.desc"
+        "sort_by": "revenue.desc"
     }
 
     headers = {

@@ -6,16 +6,17 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from database import SessionLocal
 from models import Game, GameKeyword
-from services.rawg_service import fetch_games, parse_games, fetch_game_details, parse_game_keywords
+from services.igdb_service import fetch_games, parse_games
 from services.recommendation_service import get_or_create_embedding
 
 def load_games():
     db = SessionLocal()
     target_count = 10000
     inserted = 0
-    page = 1
+    offset = 0
+    limit = 500
     
-    print(f"Starting Game Fetcher. Target: {target_count} games.")
+    print(f"Starting Game Fetcher (IGDB). Target: {target_count} games.")
     
     # O(1) instant lookup cache
     existing_ids = {str(m[0]) for m in db.query(Game.game_id).all()}
@@ -24,22 +25,18 @@ def load_games():
     
     try:
         while inserted < target_count:
-            if page > 250: # RAWG maxes out around 10k items with page_size 40
-                print("Hit maximum page limit for RAWG.")
-                break
-                
             raw_games = None
             for attempt in range(3):
                 try:
-                    raw_games = fetch_games(page)
+                    raw_games = fetch_games(offset=offset, limit=limit)
                     break
                 except Exception as e:
                     print(f"Attempt {attempt + 1}/3 failed: {e}")
                     time.sleep(2)
             
             if not raw_games:
-                page += 1
-                continue
+                print("No more games found or API failing. Exiting.")
+                break
                 
             games = parse_games(raw_games)
             
@@ -47,19 +44,14 @@ def load_games():
                 if inserted >= target_count:
                     break
                     
-                game_id = str(g_data["game_id"])
+                game_id = g_data["game_id"]
                 
                 if game_id in existing_ids:
                     continue
                 
-                # Fetch Keywords
-                keywords = []
-                try:
-                    raw_details = fetch_game_details(game_id)
-                    keywords = parse_game_keywords(raw_details)
-                except Exception as e:
-                    print(f"Failed to fetch details for {game_id}: {e}")
+                keywords = g_data.get("game_keywords", [])
                 
+                # We skip games with no keywords to keep data quality high
                 if not keywords:
                     continue
                 
@@ -90,7 +82,7 @@ def load_games():
                     print(f"Failed to embed {game_id}: {e}")
                     db.rollback()
                     
-            page += 1
+            offset += limit
             time.sleep(0.5)
             
         print(f"\\nTotal games successfully inserted: {inserted}")

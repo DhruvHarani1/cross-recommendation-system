@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv('API_KEY_MOVIES')
-BASE_URL = "https://api.themoviedb.org/3"
+BASE_URL = "https://api.tmdb.org/3"
 
 def validate_api_key():
     if not API_KEY:
@@ -61,7 +61,7 @@ def parse_movies(raw_movies):
         movies.append(
             {
                 "movie_id":str(movie['id']),
-                "movie_title":movie['original_title'],
+                "movie_title":movie['title'],
                 "movie_overview":movie['overview'],
                 "movie_poster_path":movie['poster_path']
             }
@@ -125,7 +125,7 @@ def search_movie_by_title(query: str):
         if movie.get("poster_path") and movie.get("overview"):
             return {
                 "movie_id": str(movie["id"]),
-                "movie_title": movie["original_title"],
+                "movie_title": movie["title"],
                 "movie_overview": movie["overview"],
                 "movie_poster_path": movie["poster_path"]
             }

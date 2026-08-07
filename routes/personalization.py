@@ -283,7 +283,7 @@ def dashboard_feed(
     # Section 1: "Top Picks for You" — personalized blend across all types
     try:
         top_picks = get_personalized_recommendations(
-            db, user_id, ["all"], limit=10, alpha=0.4,
+            db, user_id, ["all"], limit=16, alpha=0.4,
             pre_taste_vector=pre_taste_vector, pre_tag_dict=pre_tag_dict,
             pre_interacted=pre_interacted
         )

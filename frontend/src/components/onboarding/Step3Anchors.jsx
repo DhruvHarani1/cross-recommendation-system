@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Heart } from 'lucide-react';
+import { Check, Heart, Search, X, AlertCircle } from 'lucide-react';
 import { getSampleItems } from '../../api/user';
+import api from '../../api/axios';
 
 export default function Step3Anchors({ selectedCategories, onChange, onNext, onBack, isSubmitting }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState([]);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchError, setSearchError] = useState('');
+
 
   const mapCategory = (c) => {
     if (c === 'movies') return 'movie';
@@ -49,6 +57,52 @@ export default function Step3Anchors({ selectedCategories, onChange, onNext, onB
     onNext(selectedItems);
   };
 
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    if (query.length < 2) {
+      setSearchError('Search query must be at least 2 characters long.');
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    setSearchError('');
+    
+    try {
+      const token = localStorage.getItem('crossrec_access_token');
+      // If user selected only one category, we can optionally scope the search, otherwise search all
+      const typeParam = selectedCategories.length === 1 ? `&type=${mapCategory(selectedCategories[0])}` : '';
+      const res = await api.get(`/content/search?q=${encodeURIComponent(searchQuery.trim())}${typeParam}&limit=12`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // results are already returned as an array of items with content_id, content_type, title, cover_path
+      const uniqueResults = res.data.results || [];
+      
+      if (uniqueResults.length === 0) {
+        setSearchError('No matching items found. Try a different search term.');
+      }
+      setSearchResults(uniqueResults);
+    } catch (err) {
+      console.error('Search error:', err);
+      const detail = err?.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail : 'An error occurred while searching. Please try again.';
+      setSearchError(msg);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchError('');
+  };
+
   const getCategoryIcon = (type) => {
     switch (type) {
       case 'movie': return '🎬';
@@ -69,14 +123,43 @@ export default function Step3Anchors({ selectedCategories, onChange, onNext, onB
         </p>
       </div>
 
-      {loading ? (
+      <form onSubmit={handleSearch} className="mb-6 relative max-w-xl mx-auto w-full">
+        <div className="relative flex items-center">
+          <Search className="absolute left-4 w-5 h-5 text-white/40" />
+          <input
+            type="text"
+            placeholder="Search for a specific movie, game, book, or song..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-12 text-white placeholder:text-white/40 focus:outline-none focus:border-[#8B3DFF] focus:ring-1 focus:ring-[#8B3DFF] transition-all"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-4 text-white/40 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </form>
+
+      {searchError && (
+        <div className="mb-6 max-w-xl mx-auto flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <p>{searchError}</p>
+        </div>
+      )}
+
+      {loading || isSearching ? (
         <div className="flex-grow flex items-center justify-center">
-          <div className="text-white/40">Loading items...</div>
+          <div className="text-white/40">{isSearching ? 'Searching...' : 'Loading items...'}</div>
         </div>
       ) : (
         <div className="flex-grow overflow-y-auto custom-scrollbar">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {items.map((item, index) => {
+            {(searchResults.length > 0 ? searchResults : items).map((item, index) => {
               const isSelected = selectedItems.some(i => i.content_id === item.content_id);
               return (
                 <motion.div

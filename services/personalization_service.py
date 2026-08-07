@@ -474,8 +474,8 @@ def get_personalized_recommendations(
 
     scored_items.sort(key=lambda x: x["score"], reverse=True)
 
-    # Batch resolve metadata for selected scored items
-    selected_keys = [(item["content_id"], item["content_type"]) for item in scored_items[:limit*2]]
+    # Batch resolve metadata for all scored candidate items
+    selected_keys = [(item["content_id"], item["content_type"]) for item in scored_items]
     metadata_map = batch_resolve_metadata(db, selected_keys)
 
     recommendations = []
@@ -491,7 +491,7 @@ def get_personalized_recommendations(
             continue
         type_counts[item["content_type"]] += 1
 
-        meta = metadata_map.get((item["content_type"], item["content_id"]), {"title": item["content_id"], "cover_path": None})
+        meta = metadata_map.get((item["content_type"], item["content_id"])) or resolve_metadata(db, item["content_id"], item["content_type"])
         explanation = generate_because_explanation(db, user_id, item["content_id"], item["content_type"])
 
         rec = {

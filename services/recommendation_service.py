@@ -244,8 +244,8 @@ def get_or_create_embedding(db: Session , content_id :str , content_type:str)->n
     db.add(embedding_record)
     db.commit()
     
-    # Dynamically update the cache if it's already loaded!
-    global _embedding_cache
+    # Dynamically update the caches if already loaded
+    global _embedding_cache, _title_cache
     if _embedding_cache is not None:
         vec = np.array(vector)
         norm = np.linalg.norm(vec)
@@ -255,8 +255,14 @@ def get_or_create_embedding(db: Session , content_id :str , content_type:str)->n
             _embedding_cache["metadata"].append({
                 "id": content_id,
                 "type": content_type,
-                "pop": 50.0 / 100.0
+                "pop": initial_pop / 100.0
             })
+
+    if _title_cache is not None:
+        meta = resolve_metadata(db, content_id, content_type)
+        if meta and meta.get("title"):
+            title = meta["title"]
+            _title_cache.append((str(content_id), content_type, title, title.lower()))
             
     return np.array(vector)
 
@@ -402,8 +408,12 @@ def search_and_recommend(db: Session, query_text: str, source_type: Optional[str
     if not resolved_id and all_items:
         for item_id, item_type, title, searchable in all_items:
             t_low = title.lower()
-            # Ensure query_lower or title_only_query is a substring and covers significant portion
-            if (query_lower in searchable or title_only_query in t_low) and len(title_only_query) >= 0.5 * len(t_low):
+            if query_lower in searchable and len(query_lower) >= 0.8 * len(searchable):
+                resolved_id = item_id
+                resolved_type = item_type
+                match_score = 100.0
+                break
+            elif title_only_query in t_low and len(title_only_query) >= 0.8 * len(t_low):
                 resolved_id = item_id
                 resolved_type = item_type
                 match_score = 100.0
@@ -422,8 +432,8 @@ def search_and_recommend(db: Session, query_text: str, source_type: Optional[str
                 best_ratio = ratio
                 best_item = (item_id, item_type)
         
-        # Cutoff 0.80 correctly separates real typos (0.91) from distinct titles sharing a word (0.76)
-        if best_item and best_ratio >= 0.80:
+        # Cutoff 0.85 correctly separates real typos (0.91) from distinct titles sharing a word (0.80)
+        if best_item and best_ratio >= 0.85:
             resolved_id, resolved_type = best_item
             match_score = round(best_ratio * 100, 1)
 

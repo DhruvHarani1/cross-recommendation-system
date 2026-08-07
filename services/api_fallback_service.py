@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from models import Movie, Game, Book, Song, MovieKeyword, GameKeyword, BookKeyword, SongKeyword
 from services.tmdb_service import search_movie_by_title, fetch_movie_keywords, parse_keywords as parse_movie_keywords
-from services.rawg_service import search_game_by_title, fetch_game_details, parse_game_keywords
+from services.igdb_service import search_game_by_title
 from services.book_service import search_book_by_title
 from services.spotify_service import search_song_by_title, fetch_song_tags, fetch_artist_tags, parse_keywords as parse_song_keywords
 from services.keyword_extractor import extract_keywords
@@ -139,18 +139,14 @@ def _fallback_movie(db: Session, query: str):
 
 
 def _fallback_game(db: Session, query: str):
-    """Search RAWG, insert into DB with tags as keywords, return (game_id, 'game') or None."""
+    """Search IGDB, insert into DB with tags as keywords, return (game_id, 'game') or None."""
     game = search_game_by_title(query)
     if not game:
         return None
 
     _save_game(db, game)
 
-    try:
-        raw_detail = fetch_game_details(game["game_id"])
-        keywords = parse_game_keywords(raw_detail)
-    except Exception:
-        keywords = []
+    keywords = game.get("game_keywords", [])
 
     if keywords:
         _save_game_keywords(db, game["game_id"], keywords)

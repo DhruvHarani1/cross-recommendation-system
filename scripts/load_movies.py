@@ -78,6 +78,7 @@ def load_movies():
                 for kw in keywords[:10]:
                     db.add(MovieKeyword(movie_id=movie_id, keyword=kw.lower()))
                     
+                existing_ids.add(movie_id)
                 db.commit()
                 
                 # Embed

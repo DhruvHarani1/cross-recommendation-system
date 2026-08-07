@@ -131,6 +131,8 @@ def batch_get_keywords(db: Session, items: List[tuple]) -> dict:
             raw[("song", k.song_id)].append(k.keyword)
 
     return {key: ", ".join(vals) for key, vals in raw.items()}
+DEFAULT_TAG_CEILING = 50  # Benchmark tag count for normalizing live item popularity
+
 def get_or_create_embedding(db: Session , content_id :str , content_type:str)->np.array:
     record = db.query(ContentEmbedding).filter_by(content_type=content_type,content_id=content_id).first()
     if  record:
@@ -167,11 +169,20 @@ def get_or_create_embedding(db: Session , content_id :str , content_type:str)->n
     
     vector = get_model().encode(input_text).tolist()
     
+    # Dynamically calculate initial popularity score based on keyword density
+    kw_count = len([k.strip() for k in keyword_str.split(",") if k.strip()]) if keyword_str else 0
+    if kw_count <= 0:
+        initial_pop = 30.0
+    else:
+        import math
+        initial_pop = round(30.0 + 70.0 * (math.log(1 + kw_count) / math.log(1 + DEFAULT_TAG_CEILING)), 2)
+        initial_pop = min(initial_pop, 95.0)
+
     embedding_record = ContentEmbedding(
         content_id = content_id,
         content_type = content_type,
         embedding = vector,
-        popularity_score=50.0
+        popularity_score = initial_pop
     )
     db.add(embedding_record)
     db.commit()

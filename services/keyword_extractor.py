@@ -1,8 +1,14 @@
 import re
-import spacy
 
-# Load spaCy English model
-nlp = spacy.load("en_core_web_sm")
+try:
+    import spacy
+    try:
+        nlp = spacy.load("en_core_web_sm")
+    except Exception:
+        nlp = None
+except ImportError:
+    spacy = None
+    nlp = None
 
 # Common words that don't help recommendations
 STOP_WORDS = {
@@ -96,8 +102,6 @@ def extract_keywords(title: str, overview: str, categories: str):
 
     text = f"{title}. {categories}. {overview}"
 
-    doc = nlp(text)
-
     keywords = []
 
     # Categories
@@ -108,46 +112,55 @@ def extract_keywords(title: str, overview: str, categories: str):
             if category:
                 keywords.append(category)
 
-    # Named Entities
-    entity_words = set()
+    if nlp is not None:
+        doc = nlp(text)
 
-    for ent in doc.ents:
+        # Named Entities
+        entity_words = set()
 
-        if ent.label_ not in ALLOWED_ENTITY_TYPES:
-            continue
+        for ent in doc.ents:
 
-        keyword = clean_keyword(ent.text)
+            if ent.label_ not in ALLOWED_ENTITY_TYPES:
+                continue
 
-        if len(keyword) >= 4:
+            keyword = clean_keyword(ent.text)
+
+            if len(keyword) >= 4:
+                keywords.append(keyword)
+
+                for word in keyword.split():
+                    entity_words.add(word)
+
+        # Important nouns
+        for token in doc:
+
+            if token.pos_ not in {"NOUN", "PROPN"}:
+                continue
+
+            if token.dep_ not in {"nsubj", "dobj", "pobj", "ROOT"}:
+                continue
+
+            if token.is_stop or token.is_punct:
+                continue
+
+            keyword = clean_keyword(token.text)
+
+            if len(keyword) < 4:
+                continue
+
+            if keyword in STOP_WORDS:
+                continue
+
+            if keyword in entity_words:
+                continue
+
             keywords.append(keyword)
-
-            for word in keyword.split():
-                entity_words.add(word)
-
-    # Important nouns
-    for token in doc:
-
-        if token.pos_ not in {"NOUN", "PROPN"}:
-            continue
-
-        if token.dep_ not in {"nsubj", "dobj", "pobj", "ROOT"}:
-            continue
-
-        if token.is_stop or token.is_punct:
-            continue
-
-        keyword = clean_keyword(token.text)
-
-        if len(keyword) < 4:
-            continue
-
-        if keyword in STOP_WORDS:
-            continue
-
-        if keyword in entity_words:
-            continue
-
-        keywords.append(keyword)
+    else:
+        # Fallback keyword extraction if spaCy is not available
+        words = re.findall(r"\b[a-zA-Z]{4,}\b", text.lower())
+        for w in words:
+            if w not in STOP_WORDS:
+                keywords.append(clean_keyword(w))
 
     # Remove duplicates while preserving order
     keywords = list(dict.fromkeys(keywords))

@@ -14,6 +14,8 @@ from models import (
 )
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
+DEFAULT_TAG_CEILING = 50  # Benchmark tag count for normalizing bulk item popularity
+
 def generate_embeddings_for_type(content_type: str):
     print(f"\n--- Processing embeddings for {content_type.upper()} ---")
     db = SessionLocal()
@@ -72,12 +74,21 @@ def generate_embeddings_for_type(content_type: str):
             
             vector = model.encode(input_text).tolist()
             
+            # Dynamically calculate initial popularity score based on keyword count
+            kw_count = len(keywords_objs)
+            if kw_count <= 0:
+                initial_pop = 30.0
+            else:
+                import math
+                initial_pop = round(30.0 + 70.0 * (math.log(1 + kw_count) / math.log(1 + DEFAULT_TAG_CEILING)), 2)
+                initial_pop = min(initial_pop, 95.0)
+
             # 5. Save record 
             entry = ContentEmbedding(
                 content_id=item_id,
                 content_type=content_type,
                 embedding=vector,
-                popularity_score=50.0  
+                popularity_score=initial_pop
             )
             db.add(entry)
 
